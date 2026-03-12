@@ -9,6 +9,7 @@
 }
 body.page-enter { animation: pageEnter 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
 body.page-exit  { animation: pageExit 0.15s ease-in both; pointer-events: none; }
+body { overflow-x: hidden; }
 
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -215,9 +216,8 @@ a:hover { text-decoration: underline; }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes heroLogoPullBack {
-  0%   { opacity: 0; transform: scale(3.5); }
-  15%  { opacity: 1; transform: scale(3.5); }
-  100% { opacity: 1; transform: scale(1); }
+  0%   { opacity: 0.22; transform: scale(9); }
+  100% { opacity: 1;    transform: scale(1); }
 }
 @keyframes scrollCuePulse {
   0%   { opacity: 0; transform: scaleY(0.3) translateY(-8px); }
@@ -289,14 +289,15 @@ a:hover { text-decoration: underline; }
 }
 
 .hero-logo {
-  width: clamp(240px, 28vw, 380px);
+  width: clamp(180px, 38vw, 400px);
   height: auto;
   display: block;
-  animation: heroLogoPullBack 2.2s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+  transform-origin: center center;
+  animation: heroLogoPullBack 2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 .hero-logo.anim-done {
   animation: none;
-  transform: none;
+  transform: scale(1);
   opacity: 1;
   will-change: auto;
 }
