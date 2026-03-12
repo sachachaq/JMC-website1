@@ -26,7 +26,7 @@ const JMC_USERS = [
   },
   {
     username: 'rony',
-    password: 'jmc2026',
+    password: 'JMC2026',
     role: 'supervisor',
     displayName: 'Rony'
   }
