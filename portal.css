@@ -420,53 +420,79 @@ body {
 }
 .btn-export:hover { background: #dcfce7; border-color: rgba(22,163,74,0.35); }
 
-/* ===== PROGRESS BAR ===== */
-.progress-wrap {
-  background: var(--blue);
-  color: #fff;
-  padding: 10px 24px;
+/* ===== GRADE BAR ===== */
+.grade-bar {
+  background: #0c1a3d;
+  padding: 11px 24px;
   position: sticky;
   top: 60px;
   z-index: 190;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 14px rgba(0,0,0,0.28);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-
-.progress-inner {
+.grade-bar-inner {
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
 }
-
-.progress-label {
-  font-size: 0.85rem;
+.grade-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+  min-width: 160px;
+}
+.grade-eyebrow {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.35);
+}
+.grade-status {
+  font-size: 0.76rem;
   font-weight: 600;
+  color: rgba(255,255,255,0.55);
   white-space: nowrap;
-  min-width: 120px;
 }
-
-.progress-bar-track {
+.grade-track-outer {
   flex: 1;
-  height: 8px;
-  background: rgba(255,255,255,0.25);
-  border-radius: 4px;
+  height: 5px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
   overflow: hidden;
 }
-
-.progress-bar-fill {
+.grade-track-fill {
   height: 100%;
-  background: #4dd;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-  min-width: 0;
+  width: 0%;
+  border-radius: 3px;
+  transition: width 0.35s ease, background-color 0.35s ease;
+  background: rgba(255,255,255,0.2);
 }
-
-.progress-pct {
-  font-size: 0.85rem;
-  font-weight: 700;
-  min-width: 40px;
+.grade-track-fill.gf-green  { background: #4ade80; }
+.grade-track-fill.gf-yellow { background: #fbbf24; }
+.grade-track-fill.gf-red    { background: #f87171; }
+.grade-number {
+  flex-shrink: 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255,255,255,0.28);
+  font-variant-numeric: tabular-nums;
+  min-width: 72px;
   text-align: right;
+  transition: color 0.3s;
+}
+.grade-number.gn-green  { color: #4ade80; }
+.grade-number.gn-yellow { color: #fbbf24; }
+.grade-number.gn-red    { color: #f87171; }
+@media (max-width: 640px) {
+  .grade-bar   { padding: 10px 16px; }
+  .grade-meta  { min-width: 100px; }
+  .grade-number { font-size: 1.2rem; min-width: 58px; }
+  .grade-status { font-size: 0.7rem; }
 }
 
 /* ===== WALKTHROUGH FORM ===== */

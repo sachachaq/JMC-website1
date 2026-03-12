@@ -24,14 +24,17 @@
     </div>
   </header>
 
-  <!-- PROGRESS BAR -->
-  <div class="progress-wrap">
-    <div class="progress-inner">
-      <span class="progress-label" id="progressLabel">0 / 35 answered</span>
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  <!-- GRADE BAR -->
+  <div class="grade-bar">
+    <div class="grade-bar-inner">
+      <div class="grade-meta">
+        <span class="grade-eyebrow">Current Grade</span>
+        <span class="grade-status" id="gradeStatus">Not yet scored</span>
       </div>
-      <span class="progress-pct" id="progressPct">0%</span>
+      <div class="grade-track-outer">
+        <div class="grade-track-fill" id="gradeTrackFill"></div>
+      </div>
+      <span class="grade-number" id="gradeNumber">—</span>
     </div>
   </div>
 
@@ -235,18 +238,32 @@
       const uploadState = (!deselecting && val === 'No') ? 'encouraged' : 'default';
       setUploadZoneState(qid, uploadState);
 
-      updateProgress();
+      updateGradeBar();
     });
 
-    // --- Progress ---
-    function updateProgress() {
-      const total    = ALL_QUESTION_IDS.length; // 35
-      const answered = ALL_QUESTION_IDS.filter(id => answers[id]).length;
-      const pct      = Math.round((answered / total) * 100);
+    // --- Grade bar ---
+    function getGradeColor(pct) {
+      if (pct >= 80) return 'green';
+      if (pct >= 60) return 'yellow';
+      return 'red';
+    }
 
-      document.getElementById('progressLabel').textContent = answered + ' / ' + total + ' answered';
-      document.getElementById('progressFill').style.width  = pct + '%';
-      document.getElementById('progressPct').textContent   = pct + '%';
+    function updateGradeBar() {
+      const total    = ALL_QUESTION_IDS.length;
+      const answered = ALL_QUESTION_IDS.filter(id => answers[id]).length;
+      const yesCount = ALL_QUESTION_IDS.filter(id => answers[id] === 'Yes').length;
+      const hasAnswers = answered > 0;
+      const pct   = hasAnswers ? Math.round((yesCount / answered) * 100) : 0;
+      const color = hasAnswers ? getGradeColor(pct) : 'none';
+      const labels = { green: 'Passing', yellow: 'Needs Work', red: 'At Risk' };
+
+      document.getElementById('gradeNumber').textContent   = hasAnswers ? pct + '%' : '—';
+      document.getElementById('gradeNumber').className     = 'grade-number' + (hasAnswers ? ' gn-' + color : '');
+      document.getElementById('gradeTrackFill').style.width = (hasAnswers ? pct : 0) + '%';
+      document.getElementById('gradeTrackFill').className  = 'grade-track-fill' + (hasAnswers ? ' gf-' + color : '');
+      document.getElementById('gradeStatus').textContent   = hasAnswers
+        ? yesCount + ' / ' + answered + ' passing\u2002\u00b7\u2002' + labels[color] + '\u2002\u00b7\u2002' + answered + ' / ' + total + ' answered'
+        : 'Not yet scored';
     }
 
     // --- Submit ---

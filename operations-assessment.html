@@ -180,14 +180,17 @@
     </div>
   </header>
 
-  <!-- PROGRESS BAR -->
-  <div class="progress-wrap">
-    <div class="progress-inner">
-      <span class="progress-label" id="progressLabel">0 / 51 answered</span>
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  <!-- GRADE BAR -->
+  <div class="grade-bar">
+    <div class="grade-bar-inner">
+      <div class="grade-meta">
+        <span class="grade-eyebrow">Current Grade</span>
+        <span class="grade-status" id="gradeStatus">Not yet scored</span>
       </div>
-      <span class="progress-pct" id="progressPct">0%</span>
+      <div class="grade-track-outer">
+        <div class="grade-track-fill" id="gradeTrackFill"></div>
+      </div>
+      <span class="grade-number" id="gradeNumber">—</span>
     </div>
   </div>
 
@@ -536,8 +539,6 @@
         }
       }
 
-      updateProgress();
-
       // Sub-questions (pz1_rim, pz1_size, etc.) are documentation only —
       // they must never mutate the score. Only top-level product items
       // and section questions are scored.
@@ -628,6 +629,16 @@
       var anyAnswered = Object.keys(answers).length > 0;
       var color = anyAnswered ? getScoreColor(pct) : 'none';
 
+      // --- Sticky grade bar ---
+      var gradeLabels = { green: 'Passing', yellow: 'Needs Work', red: 'At Risk' };
+      document.getElementById('gradeNumber').textContent  = anyAnswered ? pct + '%' : '—';
+      document.getElementById('gradeNumber').className    = 'grade-number' + (anyAnswered ? ' gn-' + color : '');
+      document.getElementById('gradeTrackFill').style.width = (anyAnswered ? pct : 0) + '%';
+      document.getElementById('gradeTrackFill').className = 'grade-track-fill' + (anyAnswered ? ' gf-' + color : '');
+      document.getElementById('gradeStatus').textContent  = anyAnswered
+        ? total + ' / 100 pts\u2002\u00b7\u2002' + gradeLabels[color]
+        : 'Not yet scored';
+
       // Total score display
       var numEl   = document.getElementById('scoreNumber');
       var barEl   = document.getElementById('scoreBarFill');
@@ -678,17 +689,6 @@
           }
         }
       });
-    }
-
-    // --- Progress ---
-    function updateProgress() {
-      var visible  = getOAVisibleIds(answers);
-      var answered = visible.filter(function (id) { return answers[id]; }).length;
-      var total    = visible.length;
-      var pct      = Math.round((answered / total) * 100);
-      document.getElementById('progressLabel').textContent = answered + ' / ' + total + ' answered';
-      document.getElementById('progressFill').style.width  = pct + '%';
-      document.getElementById('progressPct').textContent   = pct + '%';
     }
 
     // --- Submit ---
