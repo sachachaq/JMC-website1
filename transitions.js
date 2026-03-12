@@ -2,6 +2,12 @@
   // Entrance: fade + slide up on every page load
   document.body.classList.add('page-enter');
 
+  // Fix back/forward navigation restoring page in exit state
+  window.addEventListener('pageshow', function (e) {
+    document.body.classList.remove('page-exit');
+    document.body.classList.add('page-enter');
+  });
+
   // Exit: intercept internal link clicks
   document.addEventListener('click', function (e) {
     var link = e.target.closest('a');

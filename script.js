@@ -20,13 +20,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 2800);
   }
 
-  // Stat items: fade up on scroll
+  // Stat items: fade up + count-up on scroll
   var statItems = document.querySelectorAll('.stat-item');
   if (statItems.length) {
+    function animateCount(el) {
+      var h3 = el.querySelector('h3');
+      if (!h3) return;
+      var raw    = h3.textContent.trim();
+      var suffix = raw.replace(/[0-9,]/g, '');
+      var target = parseInt(raw.replace(/[^0-9]/g, ''), 10);
+      if (isNaN(target)) return;
+      var duration = 1400;
+      var start    = performance.now();
+      function step(now) {
+        var progress = Math.min((now - start) / duration, 1);
+        var ease     = 1 - Math.pow(1 - progress, 3);
+        h3.textContent = Math.round(ease * target) + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
     var statObserver = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
+          animateCount(entry.target);
           statObserver.unobserve(entry.target);
         }
       });

@@ -53,9 +53,12 @@ a:hover { text-decoration: underline; }
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #fff;
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  border-bottom: 1px solid transparent;
+  box-shadow: none;
+  transition: background 0.3s ease, backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .nav-inner {
@@ -86,18 +89,37 @@ a:hover { text-decoration: underline; }
 }
 
 .nav-links a {
+  position: relative;
   padding: 6px 14px;
   border-radius: 6px;
   color: var(--text);
   font-size: 0.95rem;
   font-weight: 500;
-  transition: background 0.15s, color 0.15s;
+  transition: color 0.2s ease;
   text-decoration: none;
+}
+
+.nav-links a:not(.btn-nav)::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  background: #C62828;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s ease;
+}
+
+.nav-links a:not(.btn-nav):hover::after,
+.nav-links a:not(.btn-nav).active::after {
+  transform: scaleX(1);
 }
 
 .nav-links a:hover,
 .nav-links a.active {
-  background: #e8f4fb;
   color: var(--blue);
 }
 
@@ -193,8 +215,8 @@ a:hover { text-decoration: underline; }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes heroLogoPullBack {
-  0%   { opacity: 0;   transform: scale(1.55); }
-  18%  { opacity: 1;   transform: scale(1.55); }
+  0%   { opacity: 0;   transform: scale(4.5); }
+  12%  { opacity: 1;   transform: scale(4.5); }
   100% { opacity: 1;   transform: scale(1); }
 }
 @keyframes scrollCuePulse {
@@ -270,7 +292,7 @@ a:hover { text-decoration: underline; }
   width: clamp(220px, 30vw, 380px);
   height: auto;
   display: block;
-  animation: heroLogoPullBack 2.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+  animation: heroLogoPullBack 2.2s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
 }
 
 .hero-tagline {
@@ -789,10 +811,11 @@ a:hover { text-decoration: underline; }
 
 /* ===== NAV SCROLL STATE ===== */
 .nav.scrolled {
-  background: rgba(255,255,255,0.96);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 1px 24px rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom-color: rgba(0,0,0,0.08);
+  box-shadow: 0 2px 20px rgba(0,0,0,0.06);
 }
 
 /* ===== SCROLL REVEAL ===== */
