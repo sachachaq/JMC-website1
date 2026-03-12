@@ -530,7 +530,7 @@ a:hover { text-decoration: underline; }
 /* ===== CTA BAND ===== */
 .cta-band {
   position: relative;
-  background: #040d18;
+  background: linear-gradient(160deg, #0d1e4a 0%, #0a1736 40%, #071228 100%);
   color: #fff;
   text-align: center;
   padding: 100px 24px;
@@ -540,12 +540,23 @@ a:hover { text-decoration: underline; }
 .cta-band::before {
   content: '';
   position: absolute;
-  top: -180px;
+  top: -160px;
   left: 50%;
   transform: translateX(-50%);
-  width: 800px;
-  height: 600px;
-  background: radial-gradient(ellipse, rgba(0,120,172,0.18) 0%, transparent 60%);
+  width: 900px;
+  height: 640px;
+  background: radial-gradient(ellipse, rgba(26,63,160,0.28) 0%, rgba(14,40,110,0.12) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+.cta-band::after {
+  content: '';
+  position: absolute;
+  bottom: -120px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(ellipse, rgba(20,50,140,0.2) 0%, transparent 65%);
   pointer-events: none;
 }
 
