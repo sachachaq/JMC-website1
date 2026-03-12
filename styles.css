@@ -289,10 +289,17 @@ a:hover { text-decoration: underline; }
 }
 
 .hero-logo {
-  width: clamp(220px, 30vw, 380px);
+  width: clamp(260px, 34vw, 460px);
   height: auto;
   display: block;
   animation: heroLogoPullBack 2.2s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+.hero-logo.anim-done {
+  animation: none;
+  transform: none;
+  opacity: 1;
 }
 
 .hero-tagline {
