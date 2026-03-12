@@ -67,7 +67,7 @@
       const user = findUser(username, password);
       if (user) {
         errorEl.classList.remove('show');
-        setSession(user.username, user.role);
+        setSession(user.username, user.role, user.displayName);
         window.location.href = 'dashboard.html';
       } else {
         errorEl.classList.add('show');

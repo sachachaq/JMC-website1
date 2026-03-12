@@ -81,7 +81,7 @@
     if (!session) { /* redirected */ }
 
     // --- Header ---
-    document.getElementById('welcomeText').textContent = 'Welcome, ' + session.username;
+    document.getElementById('welcomeText').textContent = 'Welcome, ' + (session.displayName || session.username);
     const badge = document.getElementById('roleBadge');
     badge.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
     badge.className = 'role-badge ' + session.role;

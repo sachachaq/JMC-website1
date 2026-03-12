@@ -13,8 +13,8 @@ function getSession() {
   }
 }
 
-function setSession(username, role) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify({ username, role }));
+function setSession(username, role, displayName) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ username, role, displayName }));
 }
 
 function clearSession() {
