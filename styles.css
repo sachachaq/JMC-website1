@@ -45,7 +45,7 @@ a:hover { text-decoration: underline; }
 
 /* ===== LOGO IMAGES ===== */
 .nav-logo-img    { height: 42px; width: auto; object-fit: contain; }
-.footer-logo-img { height: 36px; width: auto; object-fit: contain; }
+.footer-logo-img { height: 64px; width: auto; object-fit: contain; filter: brightness(0) invert(1); }
 .login-logo-img  { height: 56px; width: auto; object-fit: contain; }
 
 /* ===== NAVIGATION ===== */
@@ -579,9 +579,10 @@ a:hover { text-decoration: underline; }
 
 /* ===== FOOTER ===== */
 .footer {
-  background: #0d1b2a;
-  color: rgba(255,255,255,0.75);
+  background: #0a0a0a;
+  color: rgba(255,255,255,0.55);
   padding: 56px 24px 32px;
+  border-top: 1px solid rgba(255,255,255,0.08);
 }
 
 .footer-inner {
@@ -595,7 +596,7 @@ a:hover { text-decoration: underline; }
   gap: 40px;
   margin-bottom: 40px;
   padding-bottom: 40px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .footer-brand p {
@@ -607,10 +608,10 @@ a:hover { text-decoration: underline; }
 
 .footer-col h4 {
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.12em;
   margin-bottom: 16px;
 }
 
@@ -622,8 +623,8 @@ a:hover { text-decoration: underline; }
 }
 
 .footer-col a {
-  color: rgba(255,255,255,0.65);
-  font-size: 0.9rem;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.88rem;
   transition: color 0.15s;
   text-decoration: none;
 }

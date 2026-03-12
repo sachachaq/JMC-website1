@@ -21,16 +21,16 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Stat items: fade up + count-up on scroll
-  var statItems = document.querySelectorAll('.stat-item');
-  if (statItems.length) {
+  var statsSection = document.querySelector('.stats-section');
+  if (statsSection) {
     function animateCount(el) {
       var h3 = el.querySelector('h3');
       if (!h3) return;
       var raw    = h3.textContent.trim();
-      var suffix = raw.replace(/[0-9,]/g, '');
+      var suffix = raw.replace(/[0-9]/g, '');
       var target = parseInt(raw.replace(/[^0-9]/g, ''), 10);
       if (isNaN(target)) return;
-      var duration = 1400;
+      var duration = 1600;
       var start    = performance.now();
       function step(now) {
         var progress = Math.min((now - start) / duration, 1);
@@ -42,15 +42,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     var statObserver = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          animateCount(entry.target);
-          statObserver.unobserve(entry.target);
-        }
+      if (!entries[0].isIntersecting) return;
+      statObserver.disconnect();
+      var items = statsSection.querySelectorAll('.stat-item');
+      items.forEach(function (el, i) {
+        setTimeout(function () {
+          el.classList.add('visible');
+          animateCount(el);
+        }, i * 120);
       });
-    }, { threshold: 0.2 });
-    statItems.forEach(function (el) { statObserver.observe(el); });
+    }, { threshold: 0.25 });
+    statObserver.observe(statsSection);
   }
 
   // Section reveal: fade up on scroll
