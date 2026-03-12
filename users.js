@@ -17,6 +17,12 @@ const JMC_USERS = [
     password: 'super2pass',
     role: 'supervisor',
     displayName: 'Supervisor Two'
+  },
+  {
+    username: 'gjara',
+    password: 'JMC2026',
+    role: 'admin',
+    displayName: 'Giovani Jara'
   }
 ];
 
