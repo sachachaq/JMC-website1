@@ -974,7 +974,7 @@ body {
 
   .wt-notes-card { padding: 20px; }
 
-  .welcome-text { display: none; }
+  .welcome-text { font-size: 0.78rem; }
 
   .success-box { padding: 32px 24px; }
   .login-card  { padding: 40px 24px; }
