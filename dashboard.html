@@ -14,7 +14,7 @@
   <!-- PORTAL HEADER -->
   <header class="portal-header">
     <div class="portal-header-inner">
-      <a class="portal-brand" href="dashboard.html">
+      <a class="portal-brand" href="#" onclick="clearSession(); window.location.href='index.html'; return false;">
         <img src="logo.png" alt="JMC">
         <span>JMC Portal</span>
       </a>
@@ -69,32 +69,6 @@
       </div>
     </div>
 
-    <!-- ALL SUBMISSIONS (admin only) -->
-    <div class="portal-card" id="allSubmissionsCard" style="display:none;">
-      <div class="portal-card-header">
-        <h2>All Submissions</h2>
-        <span style="font-size:0.8rem;color:var(--text-light);">Admin View</span>
-      </div>
-      <div class="portal-card-body" style="padding: 0;">
-        <div class="portal-table-wrap">
-          <table class="portal-table">
-            <thead>
-              <tr>
-                <th>Date Submitted</th>
-                <th>Store #</th>
-                <th>Store Name</th>
-                <th>Submitted By</th>
-                <th>Prepared By</th>
-                <th>ID</th>
-              </tr>
-            </thead>
-            <tbody id="allTableBody">
-              <tr><td colspan="6" class="empty-state">No submissions yet.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
 
   </main>
 
@@ -137,28 +111,6 @@
           '<td>' + formatDate(s.dateSubmitted) + '</td>' +
           '<td><span class="badge-store">' + (s.storeNumber || '—') + '</span></td>' +
           '<td>' + (s.storeName || '—') + '</td>' +
-          '<td>' + (s.preparedBy || '—') + '</td>' +
-          '<td style="font-size:0.8rem;color:var(--text-light);">' + shortId(s.id) + '</td>' +
-          '</tr>';
-      }).join('');
-    }
-
-    // --- Render All Submissions (admin) ---
-    function renderAllTable() {
-      if (session.role !== 'admin') return;
-      document.getElementById('allSubmissionsCard').style.display = 'block';
-      const all   = getSubmissions();
-      const tbody = document.getElementById('allTableBody');
-      if (all.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No submissions yet.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = all.map(function (s) {
-        return '<tr>' +
-          '<td>' + formatDate(s.dateSubmitted) + '</td>' +
-          '<td><span class="badge-store">' + (s.storeNumber || '—') + '</span></td>' +
-          '<td>' + (s.storeName || '—') + '</td>' +
-          '<td><strong>' + (s.username || '—') + '</strong></td>' +
           '<td>' + (s.preparedBy || '—') + '</td>' +
           '<td style="font-size:0.8rem;color:var(--text-light);">' + shortId(s.id) + '</td>' +
           '</tr>';
@@ -227,7 +179,6 @@
 
     // --- Init ---
     renderMyTable();
-    renderAllTable();
   </script>
 </body>
 </html>
