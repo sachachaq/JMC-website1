@@ -10,14 +10,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }, { passive: true });
   }
 
-  // Hero logo: remove compositing layer after animation for crisp rendering
-  var heroLogo = document.querySelector('.hero-logo');
-  if (heroLogo) {
-    heroLogo.addEventListener('animationend', function () {
-      heroLogo.classList.add('anim-done');
-    }, { once: true });
-  }
-
   // Hero: fade in "·" and "31 Stores" after 1s
   var heroStores = document.getElementById('heroStores');
   var heroSep    = document.getElementById('heroSep');
