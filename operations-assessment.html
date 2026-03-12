@@ -143,6 +143,102 @@
     .oa-section-score.sec-yellow { background: #fff3e0; color: #E65100; }
     .oa-section-score.sec-red    { background: #ffebee; color: #C62828; }
 
+    /* ---- Image Upload Zones ---- */
+    .imu-zone {
+      padding: 5px 20px 7px;
+      background: #fafafa;
+      border-top: 1px dashed #ebebeb;
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .imu-zone.imu-zone-encouraged {
+      background: #fffcf5;
+      border-top-color: #ffe082;
+    }
+    .imu-zone.imu-zone-required {
+      background: #fff8f8;
+      border-top-color: #ffcdd2;
+    }
+    .imu-zone.imu-drag {
+      background: #f0f4ff;
+      border-top-color: #1a3fa0;
+    }
+    /* Inside sub-blocks the zone inherits the indented style */
+    .oa-sub-block .imu-zone {
+      padding-left: 36px;
+      background: #fffaf9;
+    }
+    .imu-input { display: none; }
+    .imu-btn-row { display: flex; align-items: center; }
+    .imu-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #bbb;
+      background: none;
+      border: none;
+      padding: 3px 0;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .imu-btn:hover { color: #1a3fa0; }
+    .imu-btn.imu-btn-encouraged       { color: #E65100; }
+    .imu-btn.imu-btn-encouraged:hover { color: #bf360c; }
+    .imu-btn.imu-btn-required         { color: #C62828; font-weight: 700; }
+    .imu-btn.imu-btn-required:hover   { color: #8b0000; }
+    .imu-icon {
+      width: 13px; height: 13px;
+      flex-shrink: 0;
+    }
+    .imu-thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 7px;
+    }
+    .imu-thumbs:empty { display: none; }
+    .imu-thumb {
+      position: relative;
+      width: 62px;
+      height: 62px;
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .imu-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .imu-thumb-rm {
+      position: absolute;
+      top: 3px; right: 3px;
+      width: 17px; height: 17px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.52);
+      color: #fff;
+      border: none;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+      transition: background 0.15s;
+    }
+    .imu-thumb-rm:hover { background: rgba(198,40,40,0.88); }
+    .imu-msg {
+      display: block;
+      font-size: 0.7rem;
+      color: #C62828;
+      margin-top: 3px;
+    }
+
     /* Penalty section */
     .penalty-section .wt-section-header { background: #fff5f5; border-bottom: 1px solid #fde0e0; }
     .penalty-note {
@@ -272,6 +368,7 @@
   <script src="transitions.js"></script>
   <script src="auth.js"></script>
   <script src="operations-assessment-data.js"></script>
+  <script src="image-upload.js"></script>
   <script>
 
     // --- Auth ---
@@ -396,6 +493,7 @@
           row.appendChild(text);
           row.appendChild(toggleGroup);
           card.appendChild(row);
+          card.appendChild(createUploadZone(q.id));
         });
 
         container.appendChild(card);
@@ -429,6 +527,7 @@
       row.appendChild(text);
       row.appendChild(toggleGroup);
       parent.appendChild(row);
+      parent.appendChild(createUploadZone(itemId));
 
       // Sub-questions block (hidden until Remake selected)
       var subBlock = document.createElement('div');
@@ -462,6 +561,7 @@
         subRow.appendChild(subText);
         subRow.appendChild(subToggle);
         subBlock.appendChild(subRow);
+        subBlock.appendChild(createUploadZone(subId));
       });
 
       parent.appendChild(subBlock);
@@ -496,15 +596,24 @@
 
       // Row highlight
       var row = document.getElementById('row-' + qid);
+      var isPenalty = row && row.classList.contains('penalty-row');
       if (row) {
         row.classList.remove('answer-no', 'unanswered');
         if (!deselecting) {
-          var isPenalty = row.classList.contains('penalty-row');
           if (isPenalty ? val === 'Yes' : val === 'No' || val === 'Remake') {
             row.classList.add('answer-no');
           }
         }
       }
+
+      // Update upload zone evidence state
+      var uploadState = 'default';
+      if (!deselecting) {
+        if (val === 'Remake')                         uploadState = 'required';
+        else if (isPenalty  && val === 'Yes')         uploadState = 'required';
+        else if (!isPenalty && val === 'No')          uploadState = 'encouraged';
+      }
+      setUploadZoneState(qid, uploadState);
 
       // Show/hide sub-questions for product items
       var isTopLevel = (qid.startsWith('pz') || qid.startsWith('sd')) && qid.indexOf('_') === -1;
@@ -519,6 +628,7 @@
             subBlock.querySelectorAll('.wt-toggle-btn').forEach(function (b) {
               b.classList.remove('yes-active', 'no-active');
               delete answers[b.dataset.qid];
+              clearUploadZone(b.dataset.qid);
             });
             subBlock.querySelectorAll('.wt-question-row').forEach(function (r) {
               r.classList.remove('answer-no', 'unanswered');
@@ -725,6 +835,7 @@
         preparedBy:    document.getElementById('preparedBy').value.trim(),
         notes:         document.getElementById('notesText').value.trim(),
         answers:       Object.assign({}, answers),
+        images:        ImageStore.all(),
         score:         calculateScore().total
       };
 
@@ -753,7 +864,10 @@
           : '') +
         (penaltyCount > 0
           ? '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--red);font-weight:700;">' + penaltyCount + ' (−' + (penaltyCount * 10) + ' pts)</span></div>'
-          : '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--green);font-weight:700;">None</span></div>');
+          : '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--green);font-weight:700;">None</span></div>') +
+        (ImageStore.totalCount() > 0
+          ? '<div class="success-meta-row"><span>Photos Attached</span><span style="color:#1a3fa0;font-weight:700;">' + ImageStore.totalCount() + '</span></div>'
+          : '');
 
       document.getElementById('successOverlay').classList.add('show');
     });
