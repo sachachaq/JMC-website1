@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Store Walkthrough — JMC Portal</title>
+  <link rel="stylesheet" href="portal.css">
+</head>
+<body>
+
+  <!-- PORTAL HEADER -->
+  <header class="portal-header">
+    <div class="portal-header-inner">
+      <a class="portal-brand" href="dashboard.html">
+        <img src="logo.png" alt="JMC">
+        <span>JMC Portal</span>
+      </a>
+      <div class="portal-user">
+        <div class="portal-user-info">
+          <span class="welcome-text" id="welcomeText"></span>
+          <span class="role-badge" id="roleBadge"></span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-wrap">
+    <div class="progress-inner">
+      <span class="progress-label" id="progressLabel">0 / 35 answered</span>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <!-- WALKTHROUGH CONTENT -->
+  <main class="walkthrough-content">
+
+    <!-- TITLE SECTION -->
+    <div class="wt-title-card">
+      <h2>Store Walkthrough Form</h2>
+      <div class="wt-form-grid">
+        <div class="wt-form-group" id="grp-storeNumber">
+          <label for="storeNumber">Store Number <span style="color:#C62828">*</span></label>
+          <select id="storeNumber">
+            <option value="">Select store…</option>
+          </select>
+        </div>
+        <div class="wt-form-group" id="grp-storeName">
+          <label for="storeName">Store Name</label>
+          <input type="text" id="storeName" readonly placeholder="Auto-filled from store number">
+        </div>
+        <div class="wt-form-group" id="grp-conductedOn">
+          <label for="conductedOn">Conducted On <span style="color:#C62828">*</span></label>
+          <input type="datetime-local" id="conductedOn">
+        </div>
+        <div class="wt-form-group" id="grp-preparedBy">
+          <label for="preparedBy">Prepared By <span style="color:#C62828">*</span></label>
+          <input type="text" id="preparedBy" placeholder="Your name">
+        </div>
+      </div>
+    </div>
+
+    <!-- QUESTION SECTIONS (rendered by JS) -->
+    <div id="sectionsContainer"></div>
+
+    <!-- NOTES + NOTEWORTHY -->
+    <div class="wt-notes-card">
+      <h3>Additional Notes</h3>
+      <textarea id="notesText" placeholder="Include any additional observations, follow-up items, or context about this walkthrough…"></textarea>
+
+      <div class="noteworthy-row">
+        <label>Does this store have something noteworthy to share with the broader team?</label>
+        <div class="wt-toggle-group" id="toggle-noteworthy">
+          <button type="button" class="wt-toggle-btn" data-qid="noteworthy" data-val="Yes">Yes</button>
+          <button type="button" class="wt-toggle-btn" data-qid="noteworthy" data-val="No">No</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="wt-submit-area">
+      <button type="button" class="btn-submit-wt" id="submitBtn">Submit Walkthrough</button>
+      <p class="submit-error" id="submitError">Please complete all required fields and answer all 35 questions before submitting.</p>
+    </div>
+
+  </main>
+
+  <!-- SUCCESS OVERLAY -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-box">
+      <div class="success-icon">&#10003;</div>
+      <h2>Walkthrough Submitted!</h2>
+      <p class="sub">Your walkthrough has been saved successfully. Great work keeping our standards high.</p>
+      <div class="success-meta" id="successMeta"></div>
+      <div class="success-actions">
+        <a href="dashboard.html" class="btn-success-dashboard">&#8592; Back to Dashboard</a>
+        <button type="button" class="btn-success-new" id="newWalkthroughBtn">Start New Walkthrough</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="transitions.js"></script>
+  <script src="auth.js"></script>
+  <script src="walkthrough-data.js"></script>
+  <script>
+    // --- Auth ---
+    const session = requireAuth();
+    if (!session) { /* redirected */ }
+
+    document.getElementById('welcomeText').textContent = 'Welcome, ' + session.username;
+    const badge = document.getElementById('roleBadge');
+    badge.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
+    badge.className = 'role-badge ' + session.role;
+
+    // --- Answers map: questionId -> 'Yes'|'No' ---
+    const answers = {};
+
+    // --- Populate store dropdown ---
+    (function () {
+      const sel = document.getElementById('storeNumber');
+      STORE_NUMBERS.forEach(function (s) {
+        const opt = document.createElement('option');
+        opt.value = s.number;
+        opt.textContent = s.number;
+        sel.appendChild(opt);
+      });
+    })();
+
+    // Store number → name
+    document.getElementById('storeNumber').addEventListener('change', function () {
+      const found = STORE_NUMBERS.find(s => s.number === this.value);
+      document.getElementById('storeName').value = found ? found.name : '';
+    });
+
+    // Default conductedOn to now
+    (function () {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const local = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+                    'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+      document.getElementById('conductedOn').value = local;
+    })();
+
+    // Pre-fill prepared by
+    document.getElementById('preparedBy').value = session.username;
+
+    // --- Render question sections ---
+    (function () {
+      const container = document.getElementById('sectionsContainer');
+      FORM_SECTIONS.forEach(function (section) {
+        const card = document.createElement('div');
+        card.className = 'wt-section';
+        card.id = 'section-' + section.id;
+
+        const header = document.createElement('div');
+        header.className = 'wt-section-header';
+        header.innerHTML =
+          '<div class="wt-section-dot" style="background:' + section.color + '"></div>' +
+          '<span class="wt-section-title">' + section.title + '</span>' +
+          '<span class="wt-section-count">' + section.questions.length + ' questions</span>';
+
+        card.appendChild(header);
+
+        section.questions.forEach(function (q) {
+          const row = document.createElement('div');
+          row.className = 'wt-question-row';
+          row.id = 'row-' + q.id;
+
+          const text = document.createElement('span');
+          text.className = 'wt-question-text';
+          text.textContent = q.text;
+
+          const toggleGroup = document.createElement('div');
+          toggleGroup.className = 'wt-toggle-group';
+          toggleGroup.id = 'toggle-' + q.id;
+
+          ['Yes', 'No'].forEach(function (val) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'wt-toggle-btn';
+            btn.dataset.qid = q.id;
+            btn.dataset.val = val;
+            btn.textContent = val;
+            toggleGroup.appendChild(btn);
+          });
+
+          row.appendChild(text);
+          row.appendChild(toggleGroup);
+          card.appendChild(row);
+        });
+
+        container.appendChild(card);
+      });
+    })();
+
+    // --- Toggle button handler (event delegation) ---
+    document.addEventListener('click', function (e) {
+      const btn = e.target.closest('.wt-toggle-btn');
+      if (!btn) return;
+
+      const qid = btn.dataset.qid;
+      const val = btn.dataset.val;
+
+      answers[qid] = val;
+
+      // Update button states
+      const group = document.getElementById('toggle-' + qid);
+      group.querySelectorAll('.wt-toggle-btn').forEach(function (b) {
+        b.classList.remove('yes-active', 'no-active');
+      });
+      btn.classList.add(val === 'Yes' ? 'yes-active' : 'no-active');
+
+      // Row highlight for 'No' answers (only question rows, not noteworthy)
+      const row = document.getElementById('row-' + qid);
+      if (row) {
+        row.classList.remove('answer-no', 'unanswered');
+        if (val === 'No') row.classList.add('answer-no');
+      }
+
+      updateProgress();
+    });
+
+    // --- Progress ---
+    function updateProgress() {
+      const total    = ALL_QUESTION_IDS.length; // 35
+      const answered = ALL_QUESTION_IDS.filter(id => answers[id]).length;
+      const pct      = Math.round((answered / total) * 100);
+
+      document.getElementById('progressLabel').textContent = answered + ' / ' + total + ' answered';
+      document.getElementById('progressFill').style.width  = pct + '%';
+      document.getElementById('progressPct').textContent   = pct + '%';
+    }
+
+    // --- Submit ---
+    document.getElementById('submitBtn').addEventListener('click', function () {
+      const storeNumber = document.getElementById('storeNumber').value;
+      const storeName   = document.getElementById('storeName').value;
+      const conductedOn = document.getElementById('conductedOn').value;
+      const preparedBy  = document.getElementById('preparedBy').value.trim();
+      const errorEl     = document.getElementById('submitError');
+
+      let valid = true;
+
+      // Validate title fields
+      ['storeNumber', 'conductedOn', 'preparedBy'].forEach(function (fieldId) {
+        const grp = document.getElementById('grp-' + fieldId);
+        const el  = document.getElementById(fieldId);
+        if (!el.value.trim()) {
+          grp.classList.add('error');
+          valid = false;
+        } else {
+          grp.classList.remove('error');
+        }
+      });
+
+      // Validate all questions answered
+      const unanswered = ALL_QUESTION_IDS.filter(id => !answers[id]);
+      if (unanswered.length > 0) {
+        valid = false;
+        // Highlight unanswered question rows
+        ALL_QUESTION_IDS.forEach(function (id) {
+          const row = document.getElementById('row-' + id);
+          if (row) {
+            if (!answers[id]) {
+              row.classList.add('unanswered');
+            } else {
+              row.classList.remove('unanswered');
+            }
+          }
+        });
+      } else {
+        ALL_QUESTION_IDS.forEach(function (id) {
+          const row = document.getElementById('row-' + id);
+          if (row) row.classList.remove('unanswered');
+        });
+      }
+
+      if (!valid) {
+        errorEl.classList.add('show');
+        // Scroll to first error
+        const firstError = document.querySelector('.wt-form-group.error, .wt-question-row.unanswered');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      errorEl.classList.remove('show');
+
+      // Build submission
+      const submission = {
+        id:            generateId(),
+        username:      session.username,
+        dateSubmitted: new Date().toISOString(),
+        storeNumber:   storeNumber,
+        storeName:     storeName,
+        conductedOn:   conductedOn,
+        preparedBy:    preparedBy,
+        notes:         document.getElementById('notesText').value.trim(),
+        answers:       Object.assign({}, answers)
+      };
+
+      saveSubmission(submission);
+
+      // Show success overlay
+      const noCount  = ALL_QUESTION_IDS.filter(id => answers[id] === 'No').length;
+      const yesCount = ALL_QUESTION_IDS.filter(id => answers[id] === 'Yes').length;
+
+      document.getElementById('successMeta').innerHTML =
+        '<div class="success-meta-row"><span>Submission ID</span><span>' + submission.id.split('-').pop() + '</span></div>' +
+        '<div class="success-meta-row"><span>Store</span><span>' + storeNumber + ' — ' + storeName + '</span></div>' +
+        '<div class="success-meta-row"><span>Submitted</span><span>' + new Date(submission.dateSubmitted).toLocaleString() + '</span></div>' +
+        '<div class="success-meta-row"><span>Yes Answers</span><span style="color:var(--green);font-weight:700;">' + yesCount + '</span></div>' +
+        '<div class="success-meta-row"><span>No Answers</span><span style="color:var(--red);font-weight:700;">' + noCount + '</span></div>';
+
+      document.getElementById('successOverlay').classList.add('show');
+    });
+
+    // --- New walkthrough ---
+    document.getElementById('newWalkthroughBtn').addEventListener('click', function () {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

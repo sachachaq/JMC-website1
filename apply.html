@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Careers — JMC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="nav-brand" href="index.html">
+        <img src="logo.png" alt="JMC" class="nav-logo-img">
+      </a>
+      <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="apply.html">Careers</a></li>
+        <li><a href="login.html" class="btn-nav">Employee Login</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="about-hero">
+    <div class="container">
+      <h1>Join the JMC Team</h1>
+      <p>Build a real career with a company that promotes from within and invests in its people.</p>
+    </div>
+  </section>
+
+  <!-- WHY JMC -->
+  <section class="section section-alt reveal">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-eyebrow">Why JMC</span>
+        <h2>What We Offer</h2>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">💰</div>
+          <h3>Competitive Pay</h3>
+          <p>We offer above-market wages and regular performance reviews to make sure our team is always fairly compensated.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📈</div>
+          <h3>Real Growth</h3>
+          <p>We promote from within. Many of our managers and supervisors started as hourly team members and grew into leadership.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">📅</div>
+          <h3>Flexible Scheduling</h3>
+          <p>Full-time, part-time, and flexible shifts available. We work around your life, not the other way around.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🎓</div>
+          <h3>Full Training</h3>
+          <p>No experience required. We train you on everything from day one and set you up to succeed from your first shift.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🫂</div>
+          <h3>Strong Culture</h3>
+          <p>Our stores are tight-knit teams. You'll feel the JMC culture from day one — supportive, driven, and people-first.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">🌟</div>
+          <h3>The Power of Possible</h3>
+          <p>Gio and John built JMC from the ground up. That same opportunity exists for every person who walks through our doors.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APPLICATION FORM -->
+  <section class="section reveal">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-eyebrow">Get Started</span>
+        <h2>Apply Now</h2>
+        <p>Fill out the form below and a member of our team will be in touch within 2–3 business days.</p>
+      </div>
+
+      <div class="apply-form-wrap">
+        <div class="card" style="padding: 40px 44px;">
+
+          <div class="alert alert-success" id="applySuccess">
+            Thank you for applying! We've received your application and will be in touch shortly.
+          </div>
+          <div class="alert alert-error" id="applyError">
+            Please fill in all required fields before submitting.
+          </div>
+
+          <form id="applyForm" novalidate>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">First Name <span style="color:#C62828">*</span></label>
+                <input type="text" id="firstName" placeholder="Jane" required>
+              </div>
+              <div class="form-group">
+                <label for="lastName">Last Name <span style="color:#C62828">*</span></label>
+                <input type="text" id="lastName" placeholder="Smith" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="email">Email Address <span style="color:#C62828">*</span></label>
+                <input type="email" id="email" placeholder="jane@example.com" required>
+              </div>
+              <div class="form-group">
+                <label for="phone">Phone Number <span style="color:#C62828">*</span></label>
+                <input type="tel" id="phone" placeholder="(518) 555-0100" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="position">Position Interested In <span style="color:#C62828">*</span></label>
+                <select id="position" required>
+                  <option value="">Select a position…</option>
+                  <option>Team Member (Full-Time)</option>
+                  <option>Team Member (Part-Time)</option>
+                  <option>Delivery Driver</option>
+                  <option>Shift Manager</option>
+                  <option>Assistant Manager</option>
+                  <option>Store Manager</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="location">Preferred Location <span style="color:#C62828">*</span></label>
+                <select id="location" required>
+                  <option value="">Select a location…</option>
+                  <option>Manhattan</option>
+                  <option>Brooklyn</option>
+                  <option>Queens</option>
+                  <option>The Bronx</option>
+                  <option>Staten Island</option>
+                  <option>Long Island</option>
+                  <option>Upstate New York</option>
+                  <option>Any Location</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="availability">Availability</label>
+                <select id="availability">
+                  <option value="">Select availability…</option>
+                  <option>Full-Time (35–40 hrs/week)</option>
+                  <option>Part-Time (15–25 hrs/week)</option>
+                  <option>Weekends Only</option>
+                  <option>Evenings Only</option>
+                  <option>Flexible</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="startDate">Earliest Start Date</label>
+                <input type="date" id="startDate">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="experience">Relevant Experience</label>
+              <textarea id="experience" placeholder="Tell us about any previous food service, retail, or customer service experience (or leave blank if applying with no experience)…"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="whyJMC">Why Do You Want to Join JMC?</label>
+              <textarea id="whyJMC" placeholder="Tell us what draws you to JMC and what you hope to contribute to our team…"></textarea>
+            </div>
+
+            <div style="margin-top: 8px;">
+              <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Submit Application</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-band reveal">
+    <div class="container">
+      <h2>Questions About Working at JMC?</h2>
+      <p>Reach out to our team — we're happy to answer any questions about open positions, pay, or what to expect.</p>
+      <div class="hero-buttons">
+        <a href="about.html" class="btn btn-white btn-lg">About JMC</a>
+        <a href="index.html" class="btn btn-outline-white btn-lg">Back to Home</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="logo.png" alt="JMC" class="footer-logo-img">
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="apply.html">Careers</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Portal</h4>
+          <ul>
+            <li><a href="login.html">Employee Login</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="#">corporate@jmcbakery.com</a></li>
+            <li><a href="#">(518) 555-0100</a></li>
+            <li><a href="#">Troy, NY 12180</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>&copy; 2026 JMC Domino's. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="transitions.js"></script>
+  <script src="script.js"></script>
+  <script>
+    document.getElementById('applyForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const required = ['firstName', 'lastName', 'email', 'phone', 'position', 'location'];
+      let valid = true;
+      required.forEach(function (id) {
+        const el = document.getElementById(id);
+        if (!el.value.trim()) {
+          el.style.borderColor = '#C62828';
+          valid = false;
+        } else {
+          el.style.borderColor = '';
+        }
+      });
+      const errEl = document.getElementById('applyError');
+      const okEl  = document.getElementById('applySuccess');
+      if (!valid) {
+        errEl.classList.add('show');
+        okEl.classList.remove('show');
+        return;
+      }
+      errEl.classList.remove('show');
+      okEl.classList.add('show');
+      this.reset();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  </script>
+</body>
+</html>
