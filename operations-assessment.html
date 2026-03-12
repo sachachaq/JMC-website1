@@ -36,6 +36,108 @@
     /* Wider toggle buttons for Great/Remake */
     .oa-wide-btn { width: 80px !important; font-size: 0.8rem !important; }
 
+    /* Score summary card */
+    .oa-score-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px 16px;
+      margin: 0 0 16px;
+    }
+    .oa-score-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .oa-score-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-light);
+      flex: 1;
+    }
+    .oa-score-number {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1;
+      transition: color 0.3s;
+      color: #9e9e9e;
+    }
+    .oa-score-number.score-green { color: #2E7D32; }
+    .oa-score-number.score-yellow { color: #E65100; }
+    .oa-score-number.score-red { color: #C62828; }
+    .oa-score-denom {
+      font-size: 1rem;
+      color: var(--text-light);
+      font-weight: 500;
+      align-self: flex-end;
+      padding-bottom: 4px;
+    }
+    .oa-score-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: #f5f5f5;
+      color: #888;
+      white-space: nowrap;
+    }
+    .oa-score-badge.badge-green { background: #e8f5e9; color: #2E7D32; }
+    .oa-score-badge.badge-yellow { background: #fff3e0; color: #E65100; }
+    .oa-score-badge.badge-red { background: #ffebee; color: #C62828; }
+    .oa-score-bar-track {
+      height: 6px;
+      background: #f0f0f0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .oa-score-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 3px;
+      transition: width 0.35s ease, background-color 0.35s;
+      background: #9e9e9e;
+    }
+    .oa-score-bar-fill.bar-green  { background: #2E7D32; }
+    .oa-score-bar-fill.bar-yellow { background: #E65100; }
+    .oa-score-bar-fill.bar-red    { background: #C62828; }
+    .oa-score-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .oa-score-chip {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 5px;
+      background: #f5f5f5;
+      color: #666;
+      border: 1px solid #e8e8e8;
+      transition: background 0.2s, color 0.2s;
+    }
+    .oa-score-chip.chip-green  { background: #e8f5e9; color: #2E7D32; border-color: #c8e6c9; }
+    .oa-score-chip.chip-yellow { background: #fff3e0; color: #E65100; border-color: #ffe0b2; }
+    .oa-score-chip.chip-red    { background: #ffebee; color: #C62828; border-color: #ffcdd2; }
+
+    /* Section score in header */
+    .oa-section-score {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-light);
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: #f5f5f5;
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s;
+    }
+    .oa-section-score.sec-green  { background: #e8f5e9; color: #2E7D32; }
+    .oa-section-score.sec-yellow { background: #fff3e0; color: #E65100; }
+    .oa-section-score.sec-red    { background: #ffebee; color: #C62828; }
+
     /* Penalty section */
     .penalty-section .wt-section-header { background: #fff5f5; border-bottom: 1px solid #fde0e0; }
     .penalty-note {
@@ -115,6 +217,20 @@
           <input type="text" id="location" placeholder="Enter store address or details">
         </div>
       </div>
+    </div>
+
+    <!-- SCORE SUMMARY CARD -->
+    <div class="oa-score-card" id="scoreCard">
+      <div class="oa-score-top">
+        <span class="oa-score-title">Live Score</span>
+        <span class="oa-score-number" id="scoreNumber">0</span>
+        <span class="oa-score-denom">/ 100 pts</span>
+        <span class="oa-score-badge" id="scoreBadge">Not Started</span>
+      </div>
+      <div class="oa-score-bar-track">
+        <div class="oa-score-bar-fill" id="scoreBarFill"></div>
+      </div>
+      <div class="oa-score-chips" id="scoreChips"></div>
     </div>
 
     <!-- SECTIONS (rendered by JS) -->
@@ -200,7 +316,7 @@
       hdr1.innerHTML =
         '<div class="wt-section-dot" style="background:#E8572A"></div>' +
         '<span class="wt-section-title">Section 1 — Product</span>' +
-        '<span class="wt-section-count">10 items</span>';
+        '<span class="oa-section-score" id="sec-score-product">0 / 37 pts</span>';
       sec1.appendChild(hdr1);
 
       // Pizzas label
@@ -233,10 +349,13 @@
 
         var header = document.createElement('div');
         header.className = 'wt-section-header';
+        var secScoreLabel = section.penalty
+          ? '<span class="oa-section-score" id="sec-score-' + section.id + '">0 penalties</span>'
+          : '<span class="oa-section-score" id="sec-score-' + section.id + '">0 / ' + section.maxPoints + ' pts</span>';
         header.innerHTML =
           '<div class="wt-section-dot" style="background:' + section.color + '"></div>' +
           '<span class="wt-section-title">' + section.title + '</span>' +
-          '<span class="wt-section-count">' + section.questions.length + ' questions</span>';
+          secScoreLabel;
         card.appendChild(header);
 
         if (section.penalty) {
@@ -394,7 +513,136 @@
       }
 
       updateProgress();
+      updateScore();
     });
+
+    // --- Scoring ---
+    var OA_CHIP_DEFS = [
+      { id: 'product', label: 'Product',          max: 37 },
+      { id: 'pp',      label: 'Procedures',        max: 22 },
+      { id: 'cfs',     label: 'Cleanliness',       max: 22 },
+      { id: 'bi',      label: 'Brand Image',       max: 15 },
+      { id: 'bs',      label: 'Brand Safety',      max: 4  },
+      { id: 'coe',     label: 'Penalties',         max: 0  }
+    ];
+
+    // Build chip elements once
+    (function () {
+      var container = document.getElementById('scoreChips');
+      OA_CHIP_DEFS.forEach(function (def) {
+        var chip = document.createElement('span');
+        chip.className = 'oa-score-chip';
+        chip.id = 'chip-' + def.id;
+        chip.textContent = def.label + ': ' + (def.id === 'coe' ? '0 flags' : '0 / ' + def.max);
+        container.appendChild(chip);
+      });
+    })();
+
+    function getScoreColor(pct) {
+      if (pct >= 80) return 'green';
+      if (pct >= 60) return 'yellow';
+      return 'red';
+    }
+
+    function calculateScore() {
+      var sections = {};
+
+      // Section 1: Product
+      var prod = 0;
+      for (var i = 1; i <= 7; i++) {
+        if (answers['pz' + i] === 'Great') prod += OA_PRODUCT_POINTS['pz' + i];
+      }
+      for (var j = 1; j <= 3; j++) {
+        if (answers['sd' + j] === 'Great') prod += OA_PRODUCT_POINTS['sd' + j];
+      }
+      sections['product'] = { earned: prod, max: 37 };
+
+      // Sections 2–5 (Yes = points)
+      OA_SECTIONS.forEach(function (sec) {
+        if (sec.penalty) return;
+        var earned = 0;
+        sec.questions.forEach(function (q) {
+          if (answers[q.id] === 'Yes') earned += q.points;
+        });
+        sections[sec.id] = { earned: earned, max: sec.maxPoints };
+      });
+
+      // Section 6: penalties (-10 each Yes)
+      var penaltySec = OA_SECTIONS.find(function (s) { return s.penalty; });
+      var flags = 0;
+      penaltySec.questions.forEach(function (q) {
+        if (answers[q.id] === 'Yes') flags++;
+      });
+      sections[penaltySec.id] = { earned: flags, max: 0 }; // store flag count
+
+      var total = sections['product'].earned + sections['pp'].earned +
+                  sections['cfs'].earned + sections['bi'].earned +
+                  sections['bs'].earned - (flags * 10);
+
+      return { total: total, sections: sections };
+    }
+
+    function updateScore() {
+      var result = calculateScore();
+      var total  = result.total;
+      var pct    = Math.max(0, Math.min(100, total));
+      var secs   = result.sections;
+
+      // Determine if any questions have been answered
+      var anyAnswered = Object.keys(answers).length > 0;
+      var color = anyAnswered ? getScoreColor(pct) : 'none';
+
+      // Total score display
+      var numEl   = document.getElementById('scoreNumber');
+      var barEl   = document.getElementById('scoreBarFill');
+      var badgeEl = document.getElementById('scoreBadge');
+
+      numEl.textContent = total;
+      numEl.className   = 'oa-score-number' + (anyAnswered ? ' score-' + color : '');
+
+      barEl.style.width = pct + '%';
+      barEl.className   = 'oa-score-bar-fill' + (anyAnswered ? ' bar-' + color : '');
+
+      var badgeLabels = { green: 'Passing', yellow: 'Needs Work', red: 'At Risk', none: 'Not Started' };
+      badgeEl.textContent = badgeLabels[color];
+      badgeEl.className   = 'oa-score-badge' + (anyAnswered ? ' badge-' + color : '');
+
+      // Section score chips + header labels
+      OA_CHIP_DEFS.forEach(function (def) {
+        var secData = secs[def.id];
+        if (!secData) return;
+
+        var chipEl = document.getElementById('chip-' + def.id);
+        var secEl  = document.getElementById('sec-score-' + def.id);
+
+        if (def.id === 'coe') {
+          var flagCount = secData.earned;
+          var chipText  = 'Penalties: ' + (flagCount === 0 ? 'None' : '-' + (flagCount * 10) + ' pts');
+          if (chipEl) {
+            chipEl.textContent = chipText;
+            chipEl.className   = 'oa-score-chip' + (flagCount > 0 ? ' chip-red' : '');
+          }
+          if (secEl) {
+            secEl.textContent = flagCount === 0 ? '0 penalties' : flagCount + ' flag' + (flagCount > 1 ? 's' : '') + ' (−' + (flagCount * 10) + ' pts)';
+            secEl.className   = 'oa-section-score' + (flagCount > 0 ? ' sec-red' : '');
+          }
+        } else {
+          var earned  = secData.earned;
+          var max     = secData.max;
+          var secPct  = max > 0 ? (earned / max) * 100 : 100;
+          var secColor = anyAnswered ? getScoreColor(secPct) : 'none';
+
+          if (chipEl) {
+            chipEl.textContent = def.label + ': ' + earned + ' / ' + max;
+            chipEl.className   = 'oa-score-chip' + (anyAnswered ? ' chip-' + secColor : '');
+          }
+          if (secEl) {
+            secEl.textContent = earned + ' / ' + max + ' pts';
+            secEl.className   = 'oa-section-score' + (anyAnswered ? ' sec-' + secColor : '');
+          }
+        }
+      });
+    }
 
     // --- Progress ---
     function updateProgress() {
@@ -461,19 +709,26 @@
         conductedOn:   conductedOn,
         preparedBy:    document.getElementById('preparedBy').value.trim(),
         notes:         document.getElementById('notesText').value.trim(),
-        answers:       Object.assign({}, answers)
+        answers:       Object.assign({}, answers),
+        score:         calculateScore().total
       };
 
       saveSubmission(submission);
 
       // Build success meta
+      var finalScore = calculateScore();
+      var totalPts = finalScore.total;
+      var pct = Math.max(0, totalPts);
+      var scoreColorHex = pct >= 80 ? '#2E7D32' : pct >= 60 ? '#E65100' : '#C62828';
+      var scoreLabel = pct >= 80 ? 'Passing' : pct >= 60 ? 'Needs Work' : 'At Risk';
+
       var remakeCount  = 0;
       for (var i = 1; i <= 7; i++) { if (answers['pz' + i] === 'Remake') remakeCount++; }
       var greatCount   = 7 - remakeCount;
-      var penaltySection = OA_SECTIONS.find(function (s) { return s.penalty; });
-      var penaltyCount = penaltySection.questions.filter(function (q) { return answers[q.id] === 'Yes'; }).length;
+      var penaltyCount = finalScore.sections['coe'] ? finalScore.sections['coe'].earned : 0;
 
       document.getElementById('successMeta').innerHTML =
+        '<div class="success-meta-row"><span>Final Score</span><span style="color:' + scoreColorHex + ';font-weight:800;font-size:1.1rem;">' + totalPts + ' / 100 — ' + scoreLabel + '</span></div>' +
         '<div class="success-meta-row"><span>Submission ID</span><span>' + submission.id.split('-').pop() + '</span></div>' +
         '<div class="success-meta-row"><span>Site</span><span>' + site + '</span></div>' +
         '<div class="success-meta-row"><span>Submitted</span><span>' + new Date(submission.dateSubmitted).toLocaleString() + '</span></div>' +
@@ -482,7 +737,7 @@
           ? '<div class="success-meta-row"><span>Pizzas Remake</span><span style="color:var(--red);font-weight:700;">' + remakeCount + '</span></div>'
           : '') +
         (penaltyCount > 0
-          ? '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--red);font-weight:700;">' + penaltyCount + '</span></div>'
+          ? '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--red);font-weight:700;">' + penaltyCount + ' (−' + (penaltyCount * 10) + ' pts)</span></div>'
           : '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--green);font-weight:700;">None</span></div>');
 
       document.getElementById('successOverlay').classList.add('show');
