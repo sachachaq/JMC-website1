@@ -1,14 +1,14 @@
 /* ===== PAGE TRANSITIONS ===== */
 @keyframes pageEnter {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes pageExit {
   from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 0; transform: translateY(-18px); }
 }
-body.page-enter { animation: pageEnter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
-body.page-exit  { animation: pageExit 0.21s ease-in both; pointer-events: none; }
+body.page-enter { animation: pageEnter 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+body.page-exit  { animation: pageExit 0.25s ease-in both; pointer-events: none; }
 
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
