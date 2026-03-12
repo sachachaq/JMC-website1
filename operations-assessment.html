@@ -537,7 +537,15 @@
       }
 
       updateProgress();
-      updateScore();
+
+      // Sub-questions (pz1_rim, pz1_size, etc.) are documentation only —
+      // they must never mutate the score. Only top-level product items
+      // and section questions are scored.
+      var isProductSubQ = qid.indexOf('_') !== -1 &&
+                          (qid.startsWith('pz') || qid.startsWith('sd'));
+      if (!isProductSubQ) {
+        updateScore();
+      }
     });
 
     // --- Scoring ---
@@ -571,14 +579,18 @@
     function calculateScore() {
       var sections = {};
 
-      // Section 1: Product
+      // Section 1: Product — top-level outcome ONLY.
+      // Great = full points, Remake = 0. Sub-questions (pz1_rim etc.)
+      // are root-cause diagnostics and must never contribute to score.
       var prod = 0;
-      for (var i = 1; i <= 7; i++) {
-        if (answers['pz' + i] === 'Great') prod += OA_PRODUCT_POINTS['pz' + i];
-      }
-      for (var j = 1; j <= 3; j++) {
-        if (answers['sd' + j] === 'Great') prod += OA_PRODUCT_POINTS['sd' + j];
-      }
+      var TOP_LEVEL_PZ = ['pz1','pz2','pz3','pz4','pz5','pz6','pz7'];
+      var TOP_LEVEL_SD = ['sd1','sd2','sd3'];
+      TOP_LEVEL_PZ.forEach(function (id) {
+        if (answers[id] === 'Great') prod += OA_PRODUCT_POINTS[id];
+      });
+      TOP_LEVEL_SD.forEach(function (id) {
+        if (answers[id] === 'Great') prod += OA_PRODUCT_POINTS[id];
+      });
       sections['product'] = { earned: prod, max: 37 };
 
       // Sections 2–5 (Yes = points)
