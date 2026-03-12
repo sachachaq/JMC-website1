@@ -875,6 +875,10 @@ a:hover { text-decoration: underline; }
 
   .nav-links.open { display: flex; }
   .nav-links a    { width: 100%; padding: 10px 14px; }
+  .nav-links a:not(.btn-nav)::after { display: none; }
+  .nav-links a:not(.btn-nav):hover  { background: #f0f4ff; border-radius: 6px; }
+  .nav-links .btn-nav { text-align: center; margin-top: 8px; }
+  .footer-logo-img { height: 48px; }
 
   .hero { padding: 80px 20px 100px; }
   .hero-blob-1 { width: 400px; height: 400px; }
