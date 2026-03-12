@@ -261,6 +261,88 @@ body {
 }
 .btn-start:active { transform: translateY(0); }
 
+/* ===== VEGAS RALLY COUNTDOWN ===== */
+.rally-countdown-card {
+  background: linear-gradient(160deg, #07122e 0%, #0a1a40 50%, #0d1e4a 100%);
+  border-radius: var(--radius);
+  padding: 36px 40px;
+  text-align: center;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.14);
+  position: relative;
+  overflow: hidden;
+  animation: cardFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.1s both;
+}
+.rally-countdown-card::before {
+  content: '';
+  position: absolute;
+  top: -80px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 300px;
+  background: radial-gradient(ellipse, rgba(198,40,40,0.14) 0%, transparent 65%);
+  pointer-events: none;
+}
+.rally-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 24px;
+  position: relative;
+}
+.rally-timer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+.rally-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+.rally-num {
+  font-size: clamp(2.4rem, 5vw, 3.8rem);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  transition: opacity 0.15s ease;
+}
+.rally-num.tick { opacity: 0.55; }
+.rally-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-top: 6px;
+}
+.rally-colon {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 300;
+  color: rgba(198,40,40,0.7);
+  line-height: 1;
+  padding-top: 2px;
+  user-select: none;
+}
+.rally-begun {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .rally-countdown-card { padding: 28px 20px; }
+  .rally-unit { min-width: 56px; }
+  .rally-colon { font-size: 1.6rem; padding-top: 4px; }
+}
+
 /* ===== TABLES ===== */
 .portal-table-wrap {
   overflow-x: auto;

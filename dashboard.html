@@ -40,6 +40,41 @@
       <a href="walkthrough.html" class="btn-start">&#9654; Start Walkthrough</a>
     </div>
 
+    <div class="cta-walkthrough" style="background: linear-gradient(135deg, #0a1736 0%, #0d1e4a 100%);">
+      <div class="cta-walkthrough-text">
+        <h2>Operations Assessment 2026</h2>
+        <p>Complete the Domino's Operations Assessment covering product quality, cleanliness, brand image, and safety.</p>
+      </div>
+      <a href="operations-assessment.html" class="btn-start">&#9654; Start Assessment</a>
+    </div>
+
+    <!-- VEGAS RALLY COUNTDOWN -->
+    <div class="rally-countdown-card" id="rallyCard">
+      <p class="rally-title">Countdown to Vegas Rally</p>
+      <div class="rally-timer" id="rallyTimer">
+        <div class="rally-unit">
+          <span class="rally-num" id="cd-days">--</span>
+          <span class="rally-label">Days</span>
+        </div>
+        <span class="rally-colon">:</span>
+        <div class="rally-unit">
+          <span class="rally-num" id="cd-hours">--</span>
+          <span class="rally-label">Hours</span>
+        </div>
+        <span class="rally-colon">:</span>
+        <div class="rally-unit">
+          <span class="rally-num" id="cd-minutes">--</span>
+          <span class="rally-label">Minutes</span>
+        </div>
+        <span class="rally-colon">:</span>
+        <div class="rally-unit">
+          <span class="rally-num" id="cd-seconds">--</span>
+          <span class="rally-label">Seconds</span>
+        </div>
+      </div>
+      <p class="rally-begun" id="rallyBegun" style="display:none;">The Rally Has Begun.</p>
+    </div>
+
     <!-- MY RECENT SUBMISSIONS -->
     <div class="portal-card">
       <div class="portal-card-header">
@@ -178,6 +213,49 @@
 
     // --- Init ---
     renderMyTable();
+
+    // --- Vegas Rally Countdown ---
+    (function () {
+      // !! Edit this date to change the rally target !!
+      var RALLY_DATE = new Date('2026-07-14T09:00:00');
+
+      var elDays    = document.getElementById('cd-days');
+      var elHours   = document.getElementById('cd-hours');
+      var elMinutes = document.getElementById('cd-minutes');
+      var elSeconds = document.getElementById('cd-seconds');
+      var elTimer   = document.getElementById('rallyTimer');
+      var elBegun   = document.getElementById('rallyBegun');
+
+      function pad(n) { return String(Math.floor(n)).padStart(2, '0'); }
+
+      function tick(el, val) {
+        var str = pad(val);
+        if (el.textContent !== str) {
+          el.classList.add('tick');
+          setTimeout(function () { el.textContent = str; el.classList.remove('tick'); }, 80);
+        }
+      }
+
+      function update() {
+        var diff = RALLY_DATE - Date.now();
+        if (diff <= 0) {
+          elTimer.style.display = 'none';
+          elBegun.style.display = 'block';
+          return;
+        }
+        var days    = diff / 86400000;
+        var hours   = (diff % 86400000) / 3600000;
+        var minutes = (diff % 3600000)  / 60000;
+        var seconds = (diff % 60000)    / 1000;
+        tick(elDays,    days);
+        tick(elHours,   hours);
+        tick(elMinutes, minutes);
+        tick(elSeconds, seconds);
+      }
+
+      update();
+      setInterval(update, 1000);
+    })();
   </script>
 </body>
 </html>

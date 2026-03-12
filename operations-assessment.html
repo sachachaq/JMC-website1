@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operations Assessment 2026 — JMC Portal</title>
+  <link rel="stylesheet" href="portal.css">
+  <style>
+    /* Product sub-question block */
+    .oa-sub-block {
+      display: none;
+      border-left: 3px solid #E8572A;
+      background: #fffaf9;
+    }
+    .oa-sub-block.show { display: block; }
+    .oa-sub-block .wt-question-row {
+      padding-left: 36px;
+      background: #fffaf9;
+      font-size: 0.875rem;
+    }
+    .oa-sub-block .wt-question-row:last-child { border-bottom: none; }
+
+    /* Section 1 category labels */
+    .oa-item-label {
+      padding: 8px 20px 6px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #999;
+      background: #fafafa;
+      border-top: 1px solid var(--border);
+    }
+    .oa-item-label:first-of-type { border-top: none; }
+
+    /* Wider toggle buttons for Great/Remake */
+    .oa-wide-btn { width: 80px !important; font-size: 0.8rem !important; }
+
+    /* Penalty section */
+    .penalty-section .wt-section-header { background: #fff5f5; border-bottom: 1px solid #fde0e0; }
+    .penalty-note {
+      font-size: 0.8rem;
+      color: #c62828;
+      padding: 10px 20px;
+      background: #fff5f5;
+      border-bottom: 1px solid #fde0e0;
+      font-style: italic;
+    }
+    .penalty-row { background: #fefefe; }
+    .penalty-row.answer-no { background: #f0fff4 !important; }
+    .penalty-row .wt-toggle-btn.yes-active {
+      background: #ffebee !important;
+      border-color: var(--red) !important;
+      color: var(--red) !important;
+    }
+    .penalty-row .wt-toggle-btn.no-active {
+      background: #e8f5e9 !important;
+      border-color: var(--green) !important;
+      color: var(--green) !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PORTAL HEADER -->
+  <header class="portal-header">
+    <div class="portal-header-inner">
+      <a class="portal-brand" href="dashboard.html">
+        <img src="logo.png" alt="JMC">
+      </a>
+      <div class="portal-user">
+        <div class="portal-user-info">
+          <span class="welcome-text" id="welcomeText"></span>
+          <span class="role-badge" id="roleBadge"></span>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-wrap">
+    <div class="progress-inner">
+      <span class="progress-label" id="progressLabel">0 / 51 answered</span>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <main class="walkthrough-content">
+
+    <!-- TITLE CARD -->
+    <div class="wt-title-card">
+      <h2>Domino's Operations Assessment 2026</h2>
+      <div class="wt-form-grid">
+        <div class="wt-form-group" id="grp-site">
+          <label for="siteConducted">Site Conducted <span style="color:#C62828">*</span></label>
+          <select id="siteConducted">
+            <option value="">Select site…</option>
+          </select>
+        </div>
+        <div class="wt-form-group" id="grp-conductedOn">
+          <label for="conductedOn">Conducted On <span style="color:#C62828">*</span></label>
+          <input type="datetime-local" id="conductedOn">
+        </div>
+        <div class="wt-form-group" id="grp-preparedBy">
+          <label for="preparedBy">Prepared By</label>
+          <input type="text" id="preparedBy" readonly>
+        </div>
+        <div class="wt-form-group" id="grp-location">
+          <label for="location">Location</label>
+          <input type="text" id="location" placeholder="Enter store address or details">
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTIONS (rendered by JS) -->
+    <div id="sectionsContainer"></div>
+
+    <!-- NOTES -->
+    <div class="wt-notes-card">
+      <h3>Notes</h3>
+      <textarea id="notesText" placeholder="Include any additional observations, follow-up items, or context about this assessment…"></textarea>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="wt-submit-area">
+      <button type="button" class="btn-submit-wt" id="submitBtn">Submit Assessment</button>
+      <p class="submit-error" id="submitError">Please complete all required fields and answer all visible questions before submitting.</p>
+    </div>
+
+  </main>
+
+  <!-- SUCCESS OVERLAY -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-box">
+      <div class="success-icon">&#10003;</div>
+      <h2>Assessment Submitted!</h2>
+      <p class="sub">Your operations assessment has been saved successfully.</p>
+      <div class="success-meta" id="successMeta"></div>
+      <div class="success-actions">
+        <a href="dashboard.html" class="btn-success-dashboard">&#8592; Back to Dashboard</a>
+        <button type="button" class="btn-success-new" id="newAssessmentBtn">Start New Assessment</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="transitions.js"></script>
+  <script src="auth.js"></script>
+  <script src="operations-assessment-data.js"></script>
+  <script>
+
+    // --- Auth ---
+    var session = requireAuth();
+    document.getElementById('welcomeText').textContent = 'Welcome, ' + (session.displayName || session.username) + '!';
+    var badge = document.getElementById('roleBadge');
+    badge.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
+    badge.className = 'role-badge ' + session.role;
+
+    // --- Answers map ---
+    var answers = {};
+
+    // --- Populate site dropdown ---
+    (function () {
+      var sel = document.getElementById('siteConducted');
+      OA_SITES.forEach(function (site) {
+        var opt = document.createElement('option');
+        opt.value = site;
+        opt.textContent = site;
+        sel.appendChild(opt);
+      });
+    })();
+
+    // --- Default date/time ---
+    (function () {
+      var now = new Date();
+      var pad = function (n) { return String(n).padStart(2, '0'); };
+      document.getElementById('conductedOn').value =
+        now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+        'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
+    })();
+
+    // --- Pre-fill prepared by ---
+    document.getElementById('preparedBy').value = session.displayName || session.username;
+
+    // --- Render sections ---
+    (function () {
+      var container = document.getElementById('sectionsContainer');
+
+      // ---- Section 1: Product ----
+      var sec1 = document.createElement('div');
+      sec1.className = 'wt-section';
+      sec1.id = 'section-product';
+
+      var hdr1 = document.createElement('div');
+      hdr1.className = 'wt-section-header';
+      hdr1.innerHTML =
+        '<div class="wt-section-dot" style="background:#E8572A"></div>' +
+        '<span class="wt-section-title">Section 1 — Product</span>' +
+        '<span class="wt-section-count">10 items</span>';
+      sec1.appendChild(hdr1);
+
+      // Pizzas label
+      var pizzaLabel = document.createElement('div');
+      pizzaLabel.className = 'oa-item-label';
+      pizzaLabel.textContent = 'Pizzas';
+      sec1.appendChild(pizzaLabel);
+
+      for (var p = 1; p <= 7; p++) {
+        renderProductItem(sec1, 'pz' + p, 'Pizza #' + p, OA_PIZZA_SUB_QS);
+      }
+
+      // Sides label
+      var sideLabel = document.createElement('div');
+      sideLabel.className = 'oa-item-label';
+      sideLabel.textContent = 'Sides';
+      sec1.appendChild(sideLabel);
+
+      for (var s = 1; s <= 3; s++) {
+        renderProductItem(sec1, 'sd' + s, 'Side #' + s, OA_SIDE_SUB_QS);
+      }
+
+      container.appendChild(sec1);
+
+      // ---- Sections 2–6 ----
+      OA_SECTIONS.forEach(function (section) {
+        var card = document.createElement('div');
+        card.className = 'wt-section' + (section.penalty ? ' penalty-section' : '');
+        card.id = 'section-' + section.id;
+
+        var header = document.createElement('div');
+        header.className = 'wt-section-header';
+        header.innerHTML =
+          '<div class="wt-section-dot" style="background:' + section.color + '"></div>' +
+          '<span class="wt-section-title">' + section.title + '</span>' +
+          '<span class="wt-section-count">' + section.questions.length + ' questions</span>';
+        card.appendChild(header);
+
+        if (section.penalty) {
+          var note = document.createElement('div');
+          note.className = 'penalty-note';
+          note.textContent = 'Flag "Yes" only if the violation is present. Yes = penalty item triggered.';
+          card.appendChild(note);
+        }
+
+        section.questions.forEach(function (q) {
+          var row = document.createElement('div');
+          row.className = 'wt-question-row' + (section.penalty ? ' penalty-row' : '');
+          row.id = 'row-' + q.id;
+
+          var text = document.createElement('span');
+          text.className = 'wt-question-text';
+          text.textContent = q.text;
+
+          var toggleGroup = document.createElement('div');
+          toggleGroup.className = 'wt-toggle-group';
+          toggleGroup.id = 'toggle-' + q.id;
+
+          ['Yes', 'No'].forEach(function (val) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'wt-toggle-btn';
+            btn.dataset.qid = q.id;
+            btn.dataset.val = val;
+            btn.textContent = val;
+            toggleGroup.appendChild(btn);
+          });
+
+          row.appendChild(text);
+          row.appendChild(toggleGroup);
+          card.appendChild(row);
+        });
+
+        container.appendChild(card);
+      });
+    })();
+
+    function renderProductItem(parent, itemId, label, subQs) {
+      // Main row
+      var row = document.createElement('div');
+      row.className = 'wt-question-row';
+      row.id = 'row-' + itemId;
+
+      var text = document.createElement('span');
+      text.className = 'wt-question-text';
+      text.textContent = label;
+
+      var toggleGroup = document.createElement('div');
+      toggleGroup.className = 'wt-toggle-group';
+      toggleGroup.id = 'toggle-' + itemId;
+
+      ['Great', 'Remake'].forEach(function (val) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'wt-toggle-btn oa-wide-btn';
+        btn.dataset.qid = itemId;
+        btn.dataset.val = val;
+        btn.textContent = val;
+        toggleGroup.appendChild(btn);
+      });
+
+      row.appendChild(text);
+      row.appendChild(toggleGroup);
+      parent.appendChild(row);
+
+      // Sub-questions block (hidden until Remake selected)
+      var subBlock = document.createElement('div');
+      subBlock.className = 'oa-sub-block';
+      subBlock.id = 'sub-' + itemId;
+
+      subQs.forEach(function (sq) {
+        var subId = itemId + '_' + sq.key;
+        var subRow = document.createElement('div');
+        subRow.className = 'wt-question-row';
+        subRow.id = 'row-' + subId;
+
+        var subText = document.createElement('span');
+        subText.className = 'wt-question-text';
+        subText.textContent = sq.label;
+
+        var subToggle = document.createElement('div');
+        subToggle.className = 'wt-toggle-group';
+        subToggle.id = 'toggle-' + subId;
+
+        ['Yes', 'No'].forEach(function (val) {
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'wt-toggle-btn';
+          btn.dataset.qid = subId;
+          btn.dataset.val = val;
+          btn.textContent = val;
+          subToggle.appendChild(btn);
+        });
+
+        subRow.appendChild(subText);
+        subRow.appendChild(subToggle);
+        subBlock.appendChild(subRow);
+      });
+
+      parent.appendChild(subBlock);
+    }
+
+    // --- Toggle click handler ---
+    document.addEventListener('click', function (e) {
+      var btn = e.target.closest('.wt-toggle-btn');
+      if (!btn) return;
+
+      var qid = btn.dataset.qid;
+      var val = btn.dataset.val;
+
+      answers[qid] = val;
+
+      // Update button styles
+      var group = document.getElementById('toggle-' + qid);
+      group.querySelectorAll('.wt-toggle-btn').forEach(function (b) {
+        b.classList.remove('yes-active', 'no-active');
+      });
+      var isPositive = (val === 'Yes' || val === 'Great');
+      btn.classList.add(isPositive ? 'yes-active' : 'no-active');
+
+      // Row highlight
+      var row = document.getElementById('row-' + qid);
+      if (row) {
+        row.classList.remove('answer-no', 'unanswered');
+        var isPenalty = row.classList.contains('penalty-row');
+        // Penalty: Yes = bad; Standard: No = bad; Remake = bad
+        if (isPenalty ? val === 'Yes' : val === 'No' || val === 'Remake') {
+          row.classList.add('answer-no');
+        }
+      }
+
+      // Show/hide sub-questions for product items
+      var isTopLevel = (qid.startsWith('pz') || qid.startsWith('sd')) && qid.indexOf('_') === -1;
+      if (isTopLevel) {
+        var subBlock = document.getElementById('sub-' + qid);
+        if (subBlock) {
+          if (val === 'Remake') {
+            subBlock.classList.add('show');
+          } else {
+            subBlock.classList.remove('show');
+            // Clear sub-question answers
+            subBlock.querySelectorAll('.wt-toggle-btn').forEach(function (b) {
+              b.classList.remove('yes-active', 'no-active');
+              delete answers[b.dataset.qid];
+            });
+            subBlock.querySelectorAll('.wt-question-row').forEach(function (r) {
+              r.classList.remove('answer-no', 'unanswered');
+            });
+          }
+        }
+      }
+
+      updateProgress();
+    });
+
+    // --- Progress ---
+    function updateProgress() {
+      var visible  = getOAVisibleIds(answers);
+      var answered = visible.filter(function (id) { return answers[id]; }).length;
+      var total    = visible.length;
+      var pct      = Math.round((answered / total) * 100);
+      document.getElementById('progressLabel').textContent = answered + ' / ' + total + ' answered';
+      document.getElementById('progressFill').style.width  = pct + '%';
+      document.getElementById('progressPct').textContent   = pct + '%';
+    }
+
+    // --- Submit ---
+    document.getElementById('submitBtn').addEventListener('click', function () {
+      var site        = document.getElementById('siteConducted').value;
+      var conductedOn = document.getElementById('conductedOn').value;
+      var errorEl     = document.getElementById('submitError');
+      var valid       = true;
+
+      // Validate required header fields
+      [['site', 'siteConducted'], ['conductedOn', 'conductedOn']].forEach(function (pair) {
+        var grp = document.getElementById('grp-' + pair[0]);
+        var el  = document.getElementById(pair[1]);
+        if (!el.value.trim()) {
+          grp.classList.add('error');
+          valid = false;
+        } else {
+          grp.classList.remove('error');
+        }
+      });
+
+      // Validate all visible questions answered
+      var visible = getOAVisibleIds(answers);
+      visible.forEach(function (id) {
+        var row = document.getElementById('row-' + id);
+        if (row) {
+          if (!answers[id]) {
+            row.classList.add('unanswered');
+            valid = false;
+          } else {
+            row.classList.remove('unanswered');
+          }
+        }
+      });
+
+      if (!valid) {
+        errorEl.classList.add('show');
+        var firstError = document.querySelector('.wt-form-group.error, .wt-question-row.unanswered');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      errorEl.classList.remove('show');
+
+      // Build submission
+      var submission = {
+        id:            generateId(),
+        type:          'operations-assessment',
+        username:      session.username,
+        displayName:   session.displayName || session.username,
+        dateSubmitted: new Date().toISOString(),
+        site:          site,
+        location:      document.getElementById('location').value.trim(),
+        conductedOn:   conductedOn,
+        preparedBy:    document.getElementById('preparedBy').value.trim(),
+        notes:         document.getElementById('notesText').value.trim(),
+        answers:       Object.assign({}, answers)
+      };
+
+      saveSubmission(submission);
+
+      // Build success meta
+      var remakeCount  = 0;
+      for (var i = 1; i <= 7; i++) { if (answers['pz' + i] === 'Remake') remakeCount++; }
+      var greatCount   = 7 - remakeCount;
+      var penaltySection = OA_SECTIONS.find(function (s) { return s.penalty; });
+      var penaltyCount = penaltySection.questions.filter(function (q) { return answers[q.id] === 'Yes'; }).length;
+
+      document.getElementById('successMeta').innerHTML =
+        '<div class="success-meta-row"><span>Submission ID</span><span>' + submission.id.split('-').pop() + '</span></div>' +
+        '<div class="success-meta-row"><span>Site</span><span>' + site + '</span></div>' +
+        '<div class="success-meta-row"><span>Submitted</span><span>' + new Date(submission.dateSubmitted).toLocaleString() + '</span></div>' +
+        '<div class="success-meta-row"><span>Pizzas Great</span><span style="color:var(--green);font-weight:700;">' + greatCount + ' / 7</span></div>' +
+        (remakeCount > 0
+          ? '<div class="success-meta-row"><span>Pizzas Remake</span><span style="color:var(--red);font-weight:700;">' + remakeCount + '</span></div>'
+          : '') +
+        (penaltyCount > 0
+          ? '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--red);font-weight:700;">' + penaltyCount + '</span></div>'
+          : '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--green);font-weight:700;">None</span></div>');
+
+      document.getElementById('successOverlay').classList.add('show');
+    });
+
+    document.getElementById('newAssessmentBtn').addEventListener('click', function () {
+      window.location.reload();
+    });
+
+  </script>
+</body>
+</html>
