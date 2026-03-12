@@ -105,6 +105,7 @@
   <script src="transitions.js"></script>
   <script src="auth.js"></script>
   <script src="walkthrough-data.js"></script>
+  <script src="image-upload.js"></script>
   <script>
     // --- Auth ---
     const session = requireAuth();
@@ -190,6 +191,7 @@
           row.appendChild(text);
           row.appendChild(toggleGroup);
           card.appendChild(row);
+          card.appendChild(createUploadZone(q.id));
         });
 
         container.appendChild(card);
@@ -204,21 +206,34 @@
       const qid = btn.dataset.qid;
       const val = btn.dataset.val;
 
-      answers[qid] = val;
+      // Clicking the already-selected option deselects it
+      const deselecting = answers[qid] === val;
+
+      if (deselecting) {
+        delete answers[qid];
+      } else {
+        answers[qid] = val;
+      }
 
       // Update button states
       const group = document.getElementById('toggle-' + qid);
       group.querySelectorAll('.wt-toggle-btn').forEach(function (b) {
         b.classList.remove('yes-active', 'no-active');
       });
-      btn.classList.add(val === 'Yes' ? 'yes-active' : 'no-active');
+      if (!deselecting) {
+        btn.classList.add(val === 'Yes' ? 'yes-active' : 'no-active');
+      }
 
       // Row highlight for 'No' answers (only question rows, not noteworthy)
       const row = document.getElementById('row-' + qid);
       if (row) {
         row.classList.remove('answer-no', 'unanswered');
-        if (val === 'No') row.classList.add('answer-no');
+        if (!deselecting && val === 'No') row.classList.add('answer-no');
       }
+
+      // Update upload zone evidence state
+      const uploadState = (!deselecting && val === 'No') ? 'encouraged' : 'default';
+      setUploadZoneState(qid, uploadState);
 
       updateProgress();
     });
@@ -298,7 +313,8 @@
         conductedOn:   conductedOn,
         preparedBy:    preparedBy,
         notes:         document.getElementById('notesText').value.trim(),
-        answers:       Object.assign({}, answers)
+        answers:       Object.assign({}, answers),
+        images:        ImageStore.all()
       };
 
       saveSubmission(submission);
@@ -312,7 +328,10 @@
         '<div class="success-meta-row"><span>Store</span><span>' + storeNumber + ' — ' + storeName + '</span></div>' +
         '<div class="success-meta-row"><span>Submitted</span><span>' + new Date(submission.dateSubmitted).toLocaleString() + '</span></div>' +
         '<div class="success-meta-row"><span>Yes Answers</span><span style="color:var(--green);font-weight:700;">' + yesCount + '</span></div>' +
-        '<div class="success-meta-row"><span>No Answers</span><span style="color:var(--red);font-weight:700;">' + noCount + '</span></div>';
+        '<div class="success-meta-row"><span>No Answers</span><span style="color:var(--red);font-weight:700;">' + noCount + '</span></div>' +
+        (ImageStore.totalCount() > 0
+          ? '<div class="success-meta-row"><span>Photos Attached</span><span style="color:#1a3fa0;font-weight:700;">' + ImageStore.totalCount() + '</span></div>'
+          : '');
 
       document.getElementById('successOverlay').classList.add('show');
     });
