@@ -36,6 +36,11 @@
     /* Wider toggle buttons for Great/Remake */
     .oa-wide-btn { width: 80px !important; font-size: 0.8rem !important; }
 
+    /* Smooth deselect transition */
+    .wt-toggle-btn {
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
     /* Score summary card */
     .oa-score-card {
       background: #fff;
@@ -470,24 +475,34 @@
       var qid = btn.dataset.qid;
       var val = btn.dataset.val;
 
-      answers[qid] = val;
+      // Clicking the already-selected option deselects it
+      var deselecting = answers[qid] === val;
+
+      if (deselecting) {
+        delete answers[qid];
+      } else {
+        answers[qid] = val;
+      }
 
       // Update button styles
       var group = document.getElementById('toggle-' + qid);
       group.querySelectorAll('.wt-toggle-btn').forEach(function (b) {
         b.classList.remove('yes-active', 'no-active');
       });
-      var isPositive = (val === 'Yes' || val === 'Great');
-      btn.classList.add(isPositive ? 'yes-active' : 'no-active');
+      if (!deselecting) {
+        var isPositive = (val === 'Yes' || val === 'Great');
+        btn.classList.add(isPositive ? 'yes-active' : 'no-active');
+      }
 
       // Row highlight
       var row = document.getElementById('row-' + qid);
       if (row) {
         row.classList.remove('answer-no', 'unanswered');
-        var isPenalty = row.classList.contains('penalty-row');
-        // Penalty: Yes = bad; Standard: No = bad; Remake = bad
-        if (isPenalty ? val === 'Yes' : val === 'No' || val === 'Remake') {
-          row.classList.add('answer-no');
+        if (!deselecting) {
+          var isPenalty = row.classList.contains('penalty-row');
+          if (isPenalty ? val === 'Yes' : val === 'No' || val === 'Remake') {
+            row.classList.add('answer-no');
+          }
         }
       }
 
@@ -496,11 +511,11 @@
       if (isTopLevel) {
         var subBlock = document.getElementById('sub-' + qid);
         if (subBlock) {
-          if (val === 'Remake') {
+          var showSub = !deselecting && val === 'Remake';
+          if (showSub) {
             subBlock.classList.add('show');
           } else {
             subBlock.classList.remove('show');
-            // Clear sub-question answers
             subBlock.querySelectorAll('.wt-toggle-btn').forEach(function (b) {
               b.classList.remove('yes-active', 'no-active');
               delete answers[b.dataset.qid];
