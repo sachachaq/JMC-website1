@@ -46,9 +46,33 @@ function getSubmissions() {
 }
 
 function saveSubmission(submission) {
+  // Save to localStorage (primary / offline)
   const submissions = getSubmissions();
   submissions.unshift(submission); // newest first
   localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
+
+  // Save to Supabase (cloud backup — fire and forget)
+  if (typeof supabaseClient !== 'undefined') {
+    supabaseClient.from('inspections').insert({
+      id:             submission.id,
+      username:       submission.username,
+      date_submitted: submission.dateSubmitted,
+      store_number:   submission.storeNumber,
+      store_name:     submission.storeName,
+      conducted_on:   submission.conductedOn,
+      prepared_by:    submission.preparedBy,
+      notes:          submission.notes,
+      answers:        submission.answers,
+      question_notes: submission.questionNotes,
+      images:         submission.images
+    }).then(function(result) {
+      if (result.error) {
+        console.error('[Supabase] Save error:', result.error.message);
+      } else {
+        console.log('[Supabase] Inspection saved:', submission.id);
+      }
+    });
+  }
 }
 
 function generateId() {
