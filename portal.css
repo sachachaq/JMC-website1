@@ -298,6 +298,15 @@ html[data-theme="dark"] .note-btn:hover {
   color: #94a3b8;
 }
 
+/* Mobile account menu */
+html[data-theme="dark"] .mobile-account-menu {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+}
+html[data-theme="dark"] .account-menu-item:hover    { background: #243044; }
+html[data-theme="dark"] .account-menu-signout       { color: #f87171; }
+html[data-theme="dark"] .account-menu-signout svg   { color: #f87171; }
+html[data-theme="dark"] .account-menu-signout:hover { background: #2d1515; }
+
 /* ===== OPERATIONS ASSESSMENT — dark overrides for embedded styles ===== */
 html[data-theme="dark"] .oa-score-card {
   background: var(--bg-card);
@@ -1405,26 +1414,105 @@ body {
   color: var(--text-light);
 }
 
-.portal-row2-user {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* ── Account trigger ── */
+.mobile-account-wrap {
+  position: relative;
 }
 
-.btn-signout-mobile {
+.mobile-account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   background: transparent;
   border: none;
-  font-size: 0.74rem;
+  cursor: pointer;
+  padding: 5px 0 5px 10px;
+  font-family: var(--font);
+  border-radius: 6px;
+  min-height: 36px;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+.mobile-account-trigger:active { opacity: 0.6; }
+
+.mobile-account-role {
+  font-size: 0.72rem;
   font-weight: 500;
   color: var(--text-light);
-  cursor: pointer;
-  padding: 4px 0;
-  font-family: var(--font);
-  opacity: 0.6;
-  transition: opacity 0.15s, color 0.15s;
+  opacity: 0.75;
   letter-spacing: 0.01em;
 }
-.btn-signout-mobile:hover { opacity: 1; color: var(--text); }
+
+.mobile-chevron {
+  width: 13px;
+  height: 13px;
+  color: var(--text-light);
+  opacity: 0.45;
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+.mobile-account-trigger[aria-expanded="true"] .mobile-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Account dropdown ── */
+.mobile-account-menu {
+  position: fixed;
+  right: 14px;
+  width: 190px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.07);
+  z-index: 500;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.95) translateY(-6px);
+  transform-origin: top right;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.mobile-account-menu.open {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.account-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-mid);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+  transition: background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.account-menu-item svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--text-light);
+}
+.account-menu-item:hover  { background: var(--bg); }
+.account-menu-item:active { opacity: 0.65; }
+
+.account-menu-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 2px 0;
+}
+
+.account-menu-signout       { color: #e53e3e; }
+.account-menu-signout svg   { color: #e53e3e; }
+.account-menu-signout:hover { background: #fff5f5; }
 
 /* ===== RESPONSIVE ===== */
 
@@ -1452,7 +1540,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 18px 10px;
+    padding: 6px 18px 12px;
     border-bottom: 1px solid var(--border);
   }
 
