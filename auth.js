@@ -46,7 +46,9 @@ function _cacheSubmission(submission) {
   localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(list));
 }
 
-// ---- Supabase Storage: image upload ----
+// ---- Supabase Storage: image upload + retrieval ----
+
+const STORAGE_BUCKET = 'JMC-Website-Images';
 
 // Convert a base64 dataUrl to a Blob for upload.
 function _dataUrlToBlob(dataUrl) {
@@ -58,35 +60,82 @@ function _dataUrlToBlob(dataUrl) {
   return new Blob([arr], { type: mime });
 }
 
-// Upload every image in ImageStore format to Supabase Storage.
-// Returns a URL-based map: { qid: [{ id, name, url, path }] }
-// Base64 dataUrls are never sent to the database.
+// Upload every image in ImageStore format to the private Storage bucket.
+// Path structure: {submissionId}/{qid}/{imageId}.jpg
+// Returns a path-only map: { qid: [{ id, name, path }] }
+// No URLs are stored — the bucket is private; signed URLs are generated on read.
 async function uploadImagesToStorage(submissionId, username, imagesStore) {
   if (typeof supabaseClient === 'undefined' || !imagesStore) return {};
-  const urlMap = {};
+  const pathMap = {};
   for (const [qid, images] of Object.entries(imagesStore)) {
     if (!images?.length) continue;
-    urlMap[qid] = [];
+    pathMap[qid] = [];
     for (const img of images) {
       if (!img.dataUrl) continue;
       try {
-        const path = `${username}/${submissionId}/${qid}/${img.id}.jpg`;
+        const path = `${submissionId}/${qid}/${img.id}.jpg`;
         const blob = _dataUrlToBlob(img.dataUrl);
         const { error } = await supabaseClient.storage
-          .from('inspection-images')
+          .from(STORAGE_BUCKET)
           .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
-        if (error) { console.warn('[Storage] Upload failed:', error.message); continue; }
-        const { data: { publicUrl } } = supabaseClient.storage
-          .from('inspection-images').getPublicUrl(path);
-        urlMap[qid].push({ id: img.id, name: img.name, url: publicUrl, path });
+        if (error) { console.warn('[Storage] Upload failed:', path, error.message); continue; }
+        // Store path only — URL generated on demand via signed URL
+        pathMap[qid].push({ id: img.id, name: img.name, path });
         console.log('[Storage] Uploaded:', path);
       } catch (e) {
         console.warn('[Storage] Exception:', e.message);
       }
     }
-    if (!urlMap[qid].length) delete urlMap[qid];
+    if (!pathMap[qid].length) delete pathMap[qid];
   }
-  return urlMap;
+  return pathMap;
+}
+
+// Generate signed URLs for every image path across a set of submissions.
+// Makes a single batched createSignedUrls call per bucket — one API round-trip
+// regardless of how many images exist.
+// Returns the same submissions array with img.url populated on each image.
+async function _enrichWithSignedUrls(submissions) {
+  if (typeof supabaseClient === 'undefined') return submissions;
+
+  // 1. Collect every unique path from every submission.
+  const allPaths = [];
+  submissions.forEach(s => {
+    if (!s.images) return;
+    Object.values(s.images).forEach(imgs => {
+      (imgs || []).forEach(img => { if (img.path) allPaths.push(img.path); });
+    });
+  });
+
+  if (!allPaths.length) return submissions;
+
+  // 2. Single batch call — Supabase generates all signed URLs in one request.
+  //    Expiry: 1 hour (3600 s). Re-loading the page refreshes them.
+  const { data: signed, error } = await supabaseClient.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrls(allPaths, 3600);
+
+  if (error || !signed) {
+    console.warn('[Storage] Could not generate signed URLs:', error?.message);
+    return submissions; // Return without URLs — report.js falls back to dataUrl
+  }
+
+  // 3. Build path → signedUrl lookup.
+  const urlMap = {};
+  signed.forEach(item => { if (item.signedUrl) urlMap[item.path] = item.signedUrl; });
+
+  // 4. Stamp each image with its signed URL.
+  return submissions.map(s => {
+    if (!s.images) return s;
+    const enriched = {};
+    Object.entries(s.images).forEach(([qid, imgs]) => {
+      enriched[qid] = (imgs || []).map(img => ({
+        ...img,
+        url: img.path ? (urlMap[img.path] || null) : img.url
+      }));
+    });
+    return { ...s, images: enriched };
+  });
 }
 
 // ---- Primary save ----
@@ -172,7 +221,7 @@ async function getSubmissionsFromCloud(username) {
     return getSubmissions();
   }
 
-  return (data || []).map(r => ({
+  const submissions = (data || []).map(r => ({
     id:            r.id,
     username:      r.username,
     dateSubmitted: r.date_submitted,
@@ -183,8 +232,9 @@ async function getSubmissionsFromCloud(username) {
     notes:         r.notes,
     answers:       r.answers,
     questionNotes: r.question_notes,
-    images:        r.images   // URL-based from DB; base64 only in localStorage cache
+    images:        r.images   // path-based from DB; signed URLs added below
   }));
+  return _enrichWithSignedUrls(submissions);
 }
 
 // ---- Utilities ----
