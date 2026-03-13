@@ -1,17 +1,36 @@
 // JMC — Domino's Operations Assessment 2026 Data
 
 const OA_SITES = [
-  'Poughkeepsie',
-  'West Haverstraw',
-  'Fishkill',
-  'Mamaroneck',
-  '89th & Columbus',
-  'Hyde Park',
-  'Wappingers Falls',
-  '116th Street',
-  'Spring Valley',
-  'Yonkers',
-  'Other'
+  '3302',
+  '3304',
+  '3305',
+  '3310',
+  '3320',
+  '3327',
+  '3330',
+  '3331',
+  '3372',
+  '3414',
+  '3420',
+  '3425',
+  '3426',
+  '3427',
+  '3457',
+  '3463',
+  '3507',
+  '3510',
+  '3516',
+  '3552',
+  '3555',
+  '3557',
+  '3558',
+  '3602',
+  '3680',
+  '3685',
+  '3687',
+  '3688',
+  '3689',
+  '3692'
 ];
 
 const OA_PIZZA_SUB_QS = [
