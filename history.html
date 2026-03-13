@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JMC Domino's — Submission History</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="portal.css?v=8">
+  <script src="portal-theme.js"></script>
+  <style>
+    /* ---- Search / filter bar ---- */
+    .hist-toolbar {
+      display: flex; gap: .75rem; align-items: center; flex-wrap: wrap;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border, #f1f1f1);
+    }
+    .hist-search {
+      flex: 1; min-width: 180px;
+      padding: .45rem .8rem;
+      border: 1px solid var(--border, #e5e7eb);
+      border-radius: 8px;
+      font-size: .875rem;
+      background: var(--input-bg, #fff);
+      color: var(--text, #111);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .hist-search:focus { border-color: #1a3fa0; }
+
+    /* ---- History table ---- */
+    .hist-table-wrap { overflow-x: auto; }
+    .hist-table {
+      width: 100%; border-collapse: collapse;
+      font-size: .875rem;
+    }
+    .hist-table thead th {
+      padding: .6rem 1rem;
+      text-align: left;
+      font-size: .72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .05em;
+      color: var(--text-light, #6b7280);
+      border-bottom: 1px solid var(--border, #e5e7eb);
+      white-space: nowrap;
+    }
+    .hist-table tbody tr {
+      border-bottom: 1px solid var(--border, #f3f4f6);
+      cursor: pointer;
+      transition: background .1s;
+    }
+    .hist-table tbody tr:last-child { border-bottom: none; }
+    .hist-table tbody tr:hover td { background: var(--hover-bg, rgba(0,0,0,.025)); }
+    .hist-table td {
+      padding: .7rem 1rem;
+      color: var(--text, #111);
+      vertical-align: middle;
+    }
+    .hist-store { font-weight: 800; font-size: .95rem; }
+    .hist-type-badge {
+      display: inline-block;
+      font-size: .67rem; font-weight: 800;
+      letter-spacing: .04em; text-transform: uppercase;
+      color: #fff; border-radius: 6px;
+      padding: .18rem .5rem;
+    }
+    .hist-score { font-weight: 800; font-size: .95rem; }
+    .hist-score.pass  { color: #16a34a; }
+    .hist-score.mid   { color: #d97706; }
+    .hist-score.fail  { color: #dc2626; }
+    .hist-score.none  { color: var(--text-light, #9ca3af); }
+    .hist-empty {
+      padding: 3rem 1.25rem; text-align: center;
+      color: var(--text-light, #6b7280); font-size: .9rem;
+    }
+    .hist-count {
+      padding: .6rem 1.25rem;
+      font-size: .78rem; color: var(--text-light, #6b7280);
+      border-top: 1px solid var(--border, #f1f1f1);
+    }
+
+    /* ---- Modal (shared with dashboard — identical CSS) ---- */
+    .sub-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:900;padding:1rem;box-sizing:border-box;align-items:center;justify-content:center}
+    .sub-overlay.open{display:flex}
+    .sub-modal{background:var(--card-bg,#fff);border-radius:16px;width:min(720px,100%);max-height:92vh;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,.22);display:flex;flex-direction:column}
+    .sub-modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:1.25rem 1.5rem 1rem;border-bottom:1px solid var(--border,#e5e7eb);position:sticky;top:0;background:var(--card-bg,#fff);z-index:1;gap:1rem}
+    .sub-modal-hdr h2{margin:0;font-size:1.05rem;font-weight:700}
+    .sub-modal-sub{margin:.2rem 0 0;font-size:.82rem;color:var(--text-light,#6b7280)}
+    .sub-modal-actions{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+    .sub-modal-close{background:none;border:none;font-size:1.6rem;line-height:1;cursor:pointer;color:var(--text-light,#6b7280);padding:0 .2rem}
+    .sub-pdf-btn{font-size:.78rem;font-weight:600;background:var(--text,#0f172a);color:#fff;border:none;border-radius:8px;padding:.35rem .8rem;cursor:pointer;transition:opacity .12s}
+    .sub-pdf-btn:hover{opacity:.82}
+    .sub-pdf-btn:disabled{opacity:.5;cursor:default}
+    .sub-modal-body{padding:1.25rem 1.5rem 1.75rem}
+    .sub-score-bar{margin-bottom:1.25rem}
+    .sub-score-numbers{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.4rem}
+    .sub-score-pct{font-size:1.5rem;font-weight:800}
+    .sub-score-track{height:8px;background:var(--border,#e5e7eb);border-radius:99px;overflow:hidden}
+    .sub-score-fill{height:100%;border-radius:99px;transition:width .3s}
+    .sub-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.5rem;margin-bottom:1.25rem;font-size:.85rem}
+    .sub-meta-item{display:flex;flex-direction:column;gap:.15rem}
+    .sub-meta-label{color:var(--text-light,#6b7280);font-size:.73rem;text-transform:uppercase;letter-spacing:.04em}
+    .sub-section{margin-bottom:1rem}
+    .sub-section-hdr{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem;color:var(--text-light,#6b7280)}
+    .sub-section-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .sub-q-row{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:.32rem 0;border-bottom:1px solid var(--border,#f3f4f6);font-size:.84rem}
+    .sub-q-row:last-child{border-bottom:none}
+    .sub-q-main{flex:1;min-width:0}
+    .sub-q-text{line-height:1.4}
+    .sub-q-note{font-size:.75rem;color:var(--text-light,#6b7280);margin-top:.18rem;font-style:italic}
+    .sub-img-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+    .sub-img-thumb{width:80px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--border,#e5e7eb)}
+    .sub-badge{font-size:.73rem;font-weight:700;padding:.15rem .55rem;border-radius:99px;flex-shrink:0;white-space:nowrap}
+    .sub-badge.yes{background:#dcfce7;color:#16a34a}.sub-badge.no{background:#fee2e2;color:#dc2626}.sub-badge.na{background:var(--border,#e5e7eb);color:var(--text-light,#6b7280)}
+    .sub-notes-section{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border,#e5e7eb)}
+    .sub-notes-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light,#6b7280);margin-bottom:.4rem}
+    .sub-notes-text{font-size:.88rem;white-space:pre-wrap;line-height:1.6}
+  </style>
+</head>
+<body>
+
+  <!-- PORTAL HEADER -->
+  <header class="portal-header">
+    <div class="portal-header-inner">
+      <a class="portal-brand" href="dashboard.html">
+        <img src="logo.png" alt="JMC">
+      </a>
+      <div class="portal-user">
+        <div class="portal-user-info">
+          <span class="welcome-text" id="welcomeText"></span>
+          <span class="role-badge" id="roleBadge"></span>
+        </div>
+        <button class="btn-dark-toggle" title="Toggle theme" onclick="toggleDarkMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" data-theme-icon>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <button class="btn-logout" onclick="logout()">Sign Out</button>
+      </div>
+      <button class="btn-dark-toggle portal-toggle-mobile" title="Toggle theme" onclick="toggleDarkMode()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" data-theme-icon>
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="portal-header-row2">
+      <span class="mobile-welcome" id="mobileWelcome"></span>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="portal-content">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
+      <h1 class="portal-page-title" style="margin:0">Submission History</h1>
+      <div style="display:flex;gap:.75rem;align-items:center">
+        <button class="btn-export" id="exportBtn">&#8659; Export CSV</button>
+        <a href="dashboard.html" style="font-size:.85rem;font-weight:600;color:var(--text-light,#6b7280);text-decoration:none">&#8592; Dashboard</a>
+      </div>
+    </div>
+
+    <div class="portal-card" style="padding:0">
+
+      <!-- Search bar -->
+      <div class="hist-toolbar">
+        <input type="search" class="hist-search" id="searchInput"
+          placeholder="Search by store, preparer, or submission ID&#8230;" autocomplete="off">
+      </div>
+
+      <!-- Table -->
+      <div class="hist-table-wrap">
+        <table class="hist-table" id="histTable">
+          <thead>
+            <tr>
+              <th>Store</th>
+              <th>Type</th>
+              <th>Score</th>
+              <th>Prepared By</th>
+              <th>Submitted By</th>
+              <th>Date</th>
+              <th>ID</th>
+            </tr>
+          </thead>
+          <tbody id="histBody">
+            <tr><td colspan="7"><div class="hist-empty">Loading&#8230;</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="hist-count" id="histCount"></div>
+    </div>
+
+  </main>
+
+  <!-- SUBMISSION DETAIL MODAL -->
+  <div class="sub-overlay" id="subOverlay" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
+    <div class="sub-modal" id="subModal">
+      <div class="sub-modal-hdr">
+        <div>
+          <h2 id="subModalTitle">Report</h2>
+          <p class="sub-modal-sub" id="subModalSub"></p>
+        </div>
+        <div class="sub-modal-actions">
+          <button class="sub-pdf-btn" id="subPdfBtn" onclick="downloadReportPDF()">&#8595; Download PDF</button>
+          <button class="sub-modal-close" id="subModalClose" aria-label="Close">&times;</button>
+        </div>
+      </div>
+      <div class="sub-modal-body" id="subModalBody"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="transitions.js"></script>
+  <script src="auth.js"></script>
+  <script src="walkthrough-data.js"></script>
+  <script src="report.js"></script>
+  <script>
+    // ---- Auth ----
+    const session = requireAuth();
+    if (!session) { /* redirected */ }
+    document.getElementById('welcomeText').textContent   = 'Welcome, ' + (session.displayName || session.username) + '!';
+    document.getElementById('mobileWelcome').textContent = 'History';
+    const badge = document.getElementById('roleBadge');
+    badge.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
+    badge.className   = 'role-badge ' + session.role;
+
+    // ---- Type badge config ----
+    const TYPE_META = {
+      'Walkthrough':           { abbr: 'WT',  bg: '#1a3fa0' },
+      'Operations Assessment': { abbr: 'OA',  bg: '#7c3aed' },
+      'FSE':                   { abbr: 'FSE', bg: '#0d9488' },
+      'Evaluation':            { abbr: 'EV',  bg: '#ea580c' }
+    };
+    function typeBg(s) {
+      const t = inspectionType(s);
+      return (TYPE_META[t] || { bg: '#374151' }).bg;
+    }
+    function typeAbbr(s) {
+      const t = inspectionType(s);
+      return (TYPE_META[t] || { abbr: t.slice(0, 2).toUpperCase() }).abbr;
+    }
+
+    // ---- Data ----
+    var _all      = [];
+    var _filtered = [];
+
+    async function loadAll() {
+      const username = session.role === 'admin' ? null : session.username;
+      _all      = await getSubmissionsFromCloud(username);
+      _filtered = _all.slice();
+      renderTable(_filtered);
+    }
+
+    // ---- Render ----
+    function renderTable(rows) {
+      const tbody = document.getElementById('histBody');
+      const count = document.getElementById('histCount');
+
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7"><div class="hist-empty">No submissions found.</div></td></tr>';
+        count.textContent = '';
+        return;
+      }
+
+      count.textContent = rows.length + ' submission' + (rows.length === 1 ? '' : 's');
+
+      tbody.innerHTML = rows.map(function (s) {
+        const sc  = calcScore(s);
+        const pct = sc.pct;
+        const scoreClass = pct === null ? 'none' : pct >= 80 ? 'pass' : pct >= 60 ? 'mid' : 'fail';
+        const scoreText  = pct !== null ? pct + '%' : '\u2014';
+        const type = inspectionType(s);
+        const date = s.dateSubmitted
+          ? new Date(s.dateSubmitted).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : '\u2014';
+
+        return '<tr data-id="' + s.id + '">' +
+          '<td><span class="hist-store">Store ' + (s.storeNumber || '\u2014') + '</span></td>' +
+          '<td><span class="hist-type-badge" style="background:' + typeBg(s) + '">' + typeAbbr(s) + '</span></td>' +
+          '<td><span class="hist-score ' + scoreClass + '">' + scoreText + '</span></td>' +
+          '<td>' + (s.preparedBy || '\u2014') + '</td>' +
+          '<td>' + (s.username   || '\u2014') + '</td>' +
+          '<td>' + date + '</td>' +
+          '<td style="font-size:.78rem;color:var(--text-light)">' + shortId(s.id) + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    // ---- Search ----
+    document.getElementById('searchInput').addEventListener('input', function () {
+      const q = this.value.trim().toLowerCase();
+      _filtered = q ? _all.filter(function (s) {
+        return (s.storeNumber && s.storeNumber.toLowerCase().includes(q)) ||
+               (s.storeName   && s.storeName.toLowerCase().includes(q))   ||
+               (s.preparedBy  && s.preparedBy.toLowerCase().includes(q))  ||
+               (s.username    && s.username.toLowerCase().includes(q))    ||
+               (s.id          && s.id.toLowerCase().includes(q));
+      }) : _all.slice();
+      renderTable(_filtered);
+    });
+
+    // ---- Row click → open report modal ----
+    document.getElementById('histBody').addEventListener('click', function (e) {
+      const row = e.target.closest('tr[data-id]');
+      if (row) openReportModal(_all.find(s => s.id === row.dataset.id));
+    });
+
+    // ---- CSV Export ----
+    function escapeCSV(val) {
+      if (val === null || val === undefined) return '""';
+      const s = String(val);
+      if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r'))
+        return '"' + s.replace(/"/g, '""') + '"';
+      return '"' + s + '"';
+    }
+
+    document.getElementById('exportBtn').addEventListener('click', function () {
+      const submissions = _filtered.length ? _filtered : _all;
+      if (!submissions.length) { alert('No submissions to export.'); return; }
+
+      const fixedH = ['Submission ID', 'Inspection Type', 'Submitted By', 'Date Submitted',
+        'Store Number', 'Store Name', 'Conducted On', 'Prepared By', 'Score %', 'Notes'];
+      const qH     = ALL_QUESTION_IDS.map(id => QUESTION_TEXT_MAP[id] || id);
+      const rows   = [fixedH.concat(qH).map(escapeCSV).join(',')];
+
+      submissions.forEach(function (s) {
+        const sc  = calcScore(s);
+        const fixed = [s.id, inspectionType(s), s.username, s.dateSubmitted,
+          s.storeNumber, s.storeName, s.conductedOn, s.preparedBy,
+          sc.pct !== null ? sc.pct : '', s.notes || ''];
+        const answers = ALL_QUESTION_IDS.map(id => s.answers ? (s.answers[id] || '') : '');
+        rows.push(fixed.concat(answers).map(escapeCSV).join(','));
+      });
+
+      const csv  = rows.join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'JMC_History_' + new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    });
+
+    // ---- Init ----
+    loadAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+// report.js — Shared submission report modal and PDF export.
+// Requires: walkthrough-data.js (FORM_SECTIONS, ALL_QUESTION_IDS, QUESTION_TEXT_MAP)
+// Requires for PDF: jsPDF CDN (window.jspdf)
+
+var _currentReport = null;
+
+// ---- Utilities (shared across pages) ----
+
+function formatDate(iso) {
+  if (!iso) return '\u2014';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function shortId(id) {
+  return id ? id.split('-').pop() : '\u2014';
+}
+
+// Derive inspection type from submission id prefix or explicit field.
+function inspectionType(s) {
+  if (s.inspectionType) return s.inspectionType;
+  const id = s.id || '';
+  if (id.startsWith('OA-')) return 'Operations Assessment';
+  if (id.startsWith('FSE-')) return 'FSE';
+  return 'Walkthrough';
+}
+
+// Calculate score from answers.
+function calcScore(s) {
+  const yes = ALL_QUESTION_IDS.filter(q => s.answers && s.answers[q] === 'Yes').length;
+  const no  = ALL_QUESTION_IDS.filter(q => s.answers && s.answers[q] === 'No').length;
+  const total = yes + no;
+  return { yes, no, total, pct: total > 0 ? Math.round(yes / total * 100) : null };
+}
+
+function scoreColor(pct) {
+  if (pct === null) return 'var(--text-light,#6b7280)';
+  return pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626';
+}
+
+function scoreLabel(pct) {
+  if (pct === null) return '\u2014';
+  return pct >= 80 ? 'Passing' : pct >= 60 ? 'Needs Work' : 'At Risk';
+}
+
+// ---- Modal ----
+
+function openReportModal(s) {
+  if (!s) return;
+  _currentReport = s;
+
+  const sc = calcScore(s);
+
+  document.getElementById('subModalTitle').textContent =
+    'Store ' + (s.storeNumber || '\u2014') + ' \u2014 ' + inspectionType(s) + ' Report';
+  document.getElementById('subModalSub').textContent = formatDate(s.dateSubmitted);
+
+  let html = '';
+
+  // Score bar
+  const color = scoreColor(sc.pct);
+  html += '<div class="sub-score-bar">' +
+    '<div class="sub-score-numbers">' +
+    '<span class="sub-score-pct" style="color:' + color + '">' +
+      (sc.pct !== null ? sc.pct + '%' : '\u2014') + '</span>' +
+    '<span style="font-size:.82rem;color:var(--text-light,#6b7280)">' +
+      sc.yes + ' yes \u00b7 ' + sc.no + ' no \u00b7 ' + scoreLabel(sc.pct) +
+    '</span></div>' +
+    '<div class="sub-score-track"><div class="sub-score-fill" ' +
+      'style="width:' + (sc.pct || 0) + '%;background:' + color + '"></div></div>' +
+    '</div>';
+
+  // Meta grid
+  html += '<div class="sub-meta-grid">' +
+    '<div class="sub-meta-item"><span class="sub-meta-label">Prepared By</span><span>' + (s.preparedBy || '\u2014') + '</span></div>' +
+    '<div class="sub-meta-item"><span class="sub-meta-label">Submitted By</span><span>' + (s.username || '\u2014') + '</span></div>' +
+    '<div class="sub-meta-item"><span class="sub-meta-label">Conducted On</span><span>' + (s.conductedOn ? s.conductedOn.replace('T', '\u00a0') : '\u2014') + '</span></div>' +
+    '<div class="sub-meta-item"><span class="sub-meta-label">Submission ID</span><span style="font-size:.78rem">' + shortId(s.id) + '</span></div>' +
+    '</div>';
+
+  // Section-by-section questions with inline images
+  FORM_SECTIONS.forEach(function (sec) {
+    html += '<div class="sub-section"><div class="sub-section-hdr">' +
+      '<div class="sub-section-dot" style="background:' + sec.color + '"></div>' + sec.title +
+      '</div>';
+    sec.questions.forEach(function (q) {
+      const ans  = s.answers ? s.answers[q.id] : null;
+      const note = s.questionNotes ? s.questionNotes[q.id] : null;
+      const imgs = (s.images && s.images[q.id]) || [];
+      const bc   = ans === 'Yes' ? 'yes' : ans === 'No' ? 'no' : 'na';
+      html += '<div class="sub-q-row">' +
+        '<div class="sub-q-main">' +
+          '<div class="sub-q-text">' + q.text + '</div>' +
+          (note ? '<div class="sub-q-note">\u270f\ufe0f ' + note + '</div>' : '') +
+          _renderThumbs(imgs) +
+        '</div>' +
+        '<span class="sub-badge ' + bc + '">' + (ans || '\u2014') + '</span>' +
+        '</div>';
+    });
+    html += '</div>';
+  });
+
+  // Noteworthy
+  if (s.answers && s.answers['noteworthy']) {
+    const nw = s.answers['noteworthy'];
+    html += '<div class="sub-section"><div class="sub-section-hdr">' +
+      '<div class="sub-section-dot" style="background:#6366f1"></div>Noteworthy</div>' +
+      '<div class="sub-q-row"><div class="sub-q-main"><div class="sub-q-text">Does this store have something noteworthy to share?</div></div>' +
+      '<span class="sub-badge ' + (nw === 'Yes' ? 'yes' : 'no') + '">' + nw + '</span></div></div>';
+  }
+
+  // Notes
+  if (s.notes) {
+    html += '<div class="sub-notes-section"><div class="sub-notes-label">Additional Notes</div>' +
+      '<div class="sub-notes-text">' +
+      s.notes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+      '</div></div>';
+  }
+
+  document.getElementById('subModalBody').innerHTML = html;
+  document.getElementById('subModal').scrollTop = 0;
+  document.getElementById('subOverlay').classList.add('open');
+}
+
+function _renderThumbs(imgs) {
+  if (!imgs || !imgs.length) return '';
+  let out = '<div class="sub-img-row">';
+  imgs.forEach(function (img) {
+    const src = img.url || img.dataUrl || '';
+    if (!src) return;
+    out += '<img src="' + src + '" crossorigin="anonymous" class="sub-img-thumb" ' +
+      'onclick="window.open(this.src,\'_blank\')" alt="evidence photo" loading="lazy">';
+  });
+  return out + '</div>';
+}
+
+function closeReportModal() {
+  document.getElementById('subOverlay').classList.remove('open');
+}
+
+// ---- PDF ----
+
+function downloadReportPDF() {
+  if (_currentReport) _buildPDF(_currentReport);
+}
+
+async function _buildPDF(s) {
+  const btn = document.getElementById('subPdfBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Building\u2026'; }
+
+  try {
+    if (!window.jspdf) throw new Error('jsPDF not loaded');
+    const doc = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+    const PW = 595.28, PH = 841.89, ML = 45, MB = 45;
+    const CW = PW - ML * 2;
+    let y = 0;
+
+    function newPage() { doc.addPage(); y = 50; }
+    function check(need) { if (y + need > PH - MB) newPage(); }
+
+    function txt(text, size, bold, r, g, b, maxW) {
+      doc.setFontSize(size);
+      doc.setFont('helvetica', bold ? 'bold' : 'normal');
+      doc.setTextColor(r ?? 0, g ?? 0, b ?? 0);
+      const lines = doc.splitTextToSize(String(text ?? ''), maxW ?? CW);
+      check(lines.length * size * 1.35);
+      doc.text(lines, ML, y);
+      y += lines.length * size * 1.35;
+    }
+
+    // Header
+    doc.setFillColor(26, 63, 160);
+    doc.rect(0, 0, PW, 52, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(255, 255, 255);
+    doc.text('JMC ' + inspectionType(s) + ' Report', ML, 34);
+    y = 68;
+
+    // Store title
+    txt('Store ' + (s.storeNumber || '\u2014'), 20, true, 15, 23, 42);
+    y += 4;
+
+    // Meta
+    const meta = [
+      ['Prepared By',    s.preparedBy  || '\u2014'],
+      ['Submitted By',   s.username    || '\u2014'],
+      ['Date Submitted', formatDate(s.dateSubmitted)],
+      ['Conducted On',   s.conductedOn ? s.conductedOn.replace('T', ' ') : '\u2014'],
+      ['Submission ID',  shortId(s.id)]
+    ];
+    doc.setFontSize(8.5);
+    meta.forEach(function ([label, value], i) {
+      const col = i % 2, row = Math.floor(i / 2);
+      const x = ML + col * (CW / 2 + 10), yy = y + row * 28;
+      check(28);
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(130, 130, 130);
+      doc.text(label.toUpperCase(), x, yy);
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(25, 25, 25);
+      doc.text(value, x, yy + 14);
+    });
+    y += Math.ceil(meta.length / 2) * 28 + 14;
+
+    // Score
+    const sc  = calcScore(s);
+    const sc3 = sc.pct >= 80 ? [22, 163, 74] : sc.pct >= 60 ? [217, 119, 6] : [220, 38, 38];
+    check(38);
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(ML, y, CW, 30, 4, 4, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+    doc.setTextColor(sc3[0], sc3[1], sc3[2]);
+    doc.text(sc.pct !== null ? sc.pct + '%' : '\u2014', ML + 10, y + 21);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text(sc.yes + ' Yes  \u00b7  ' + sc.no + ' No  \u00b7  ' + scoreLabel(sc.pct), ML + 54, y + 21);
+    y += 42;
+
+    // Sections
+    for (const sec of FORM_SECTIONS) {
+      check(28); y += 6;
+      doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+      doc.text(sec.title.toUpperCase(), ML, y);
+      doc.setDrawColor(220, 220, 220);
+      doc.line(ML + doc.getTextWidth(sec.title.toUpperCase()) + 6, y - 1, ML + CW, y - 1);
+      y += 8;
+
+      for (const q of sec.questions) {
+        const a    = s.answers ? (s.answers[q.id] || '\u2014') : '\u2014';
+        const note = s.questionNotes ? s.questionNotes[q.id] : null;
+        const ac   = a === 'Yes' ? [22, 163, 74] : a === 'No' ? [220, 38, 38] : [150, 150, 150];
+        const qLines = doc.splitTextToSize(q.text, CW - 52);
+        check(qLines.length * 11.5 + (note ? 14 : 0) + 5);
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(25, 25, 25);
+        doc.text(qLines, ML, y);
+        const bW = 28, bH = 13, bX = ML + CW - bW, bY = y - 10.5;
+        doc.setFillColor(ac[0], ac[1], ac[2]);
+        doc.roundedRect(bX, bY, bW, bH, 3, 3, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
+        doc.text(a, bX + bW / 2, bY + 9, { align: 'center' });
+        y += qLines.length * 11.5;
+        if (note) {
+          doc.setFontSize(7.5); doc.setFont('helvetica', 'italic'); doc.setTextColor(120, 120, 120);
+          const nLines = doc.splitTextToSize('\u21b3 ' + note, CW - 8);
+          doc.text(nLines, ML + 4, y);
+          y += nLines.length * 10;
+        }
+        y += 3;
+      }
+    }
+
+    // Noteworthy
+    if (s.answers?.noteworthy) {
+      const nw  = s.answers.noteworthy;
+      const nwC = nw === 'Yes' ? [22, 163, 74] : [220, 38, 38];
+      check(28); y += 6;
+      doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+      doc.text('NOTEWORTHY', ML, y); y += 8;
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(25, 25, 25);
+      doc.text('Does this store have something noteworthy to share?', ML, y);
+      doc.setFillColor(nwC[0], nwC[1], nwC[2]);
+      doc.roundedRect(ML + CW - 28, y - 10.5, 28, 13, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255); doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
+      doc.text(nw, ML + CW - 14, y - 1.5, { align: 'center' }); y += 14;
+    }
+
+    // Notes
+    if (s.notes?.trim()) {
+      check(40); y += 10;
+      doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+      doc.text('ADDITIONAL NOTES', ML, y); y += 10;
+      const nLines = doc.splitTextToSize(s.notes.trim(), CW);
+      check(nLines.length * 12 + 5);
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(25, 25, 25);
+      doc.text(nLines, ML, y); y += nLines.length * 12;
+    }
+
+    // Photos
+    const imgEntries = Object.entries(s.images || {}).filter(([, imgs]) => imgs?.length);
+    if (imgEntries.length > 0) {
+      newPage();
+      doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+      doc.text('PHOTOS', ML, y); y += 14;
+      const imgW = (CW - 10) / 2, imgH = imgW * 0.75;
+
+      for (const [qid, imgs] of imgEntries) {
+        const qText  = QUESTION_TEXT_MAP[qid] || qid;
+        const qLines = doc.splitTextToSize(qText, CW);
+        check(20);
+        doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(40, 40, 40);
+        doc.text(qLines, ML, y); y += qLines.length * 11 + 4;
+
+        let col = 0;
+        for (const img of imgs) {
+          const src = img.url || img.dataUrl || '';
+          if (!src) continue;
+          try {
+            let dataUrl;
+            if (src.startsWith('data:')) {
+              dataUrl = src;
+            } else {
+              const resp = await fetch(src, { mode: 'cors' });
+              if (!resp.ok) throw new Error('HTTP ' + resp.status);
+              const blob = await resp.blob();
+              dataUrl = await new Promise((res, rej) => {
+                const r = new FileReader();
+                r.onload = () => res(r.result);
+                r.onerror = rej;
+                r.readAsDataURL(blob);
+              });
+            }
+            check(imgH + 8);
+            doc.addImage(dataUrl, 'JPEG', ML + col * (imgW + 10), y, imgW, imgH);
+            col++;
+            if (col >= 2) { col = 0; y += imgH + 8; }
+          } catch (e) { console.warn('[PDF] Could not embed image:', e.message); }
+        }
+        if (col > 0) y += imgH + 8;
+        y += 6;
+      }
+    }
+
+    // Footer page numbers
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(180, 180, 180);
+      doc.text('JMC Domino\'s \u2014 Confidential', ML, PH - 22);
+      doc.text('Page ' + i + ' of ' + pageCount, PW - ML, PH - 22, { align: 'right' });
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    doc.save('JMC_Store' + (s.storeNumber || '') + '_' + inspectionType(s).replace(/\s+/g, '') + '_' + today + '.pdf');
+
+  } catch (e) {
+    console.error('[PDF] Generation failed:', e);
+    alert('PDF generation failed: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '\u2193 Download PDF'; }
+  }
+}
+
+// ---- Modal init (runs on every page that loads this script) ----
+
+document.addEventListener('DOMContentLoaded', function () {
+  const closeBtn = document.getElementById('subModalClose');
+  const overlay  = document.getElementById('subOverlay');
+  if (closeBtn) closeBtn.addEventListener('click', closeReportModal);
+  if (overlay)  overlay.addEventListener('click', function (e) {
+    if (e.target === this) closeReportModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && overlay?.classList.contains('open')) closeReportModal();
+  });
+});

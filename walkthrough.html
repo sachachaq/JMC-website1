@@ -413,11 +413,13 @@
 
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Saving…';
+      submitBtn.textContent = 'Saving\u2026';
 
       let result;
       try {
-        result = await saveSubmission(submission);
+        result = await saveSubmission(submission, function (status) {
+          submitBtn.textContent = status;
+        });
       } catch (e) {
         console.error('[Submit] Unhandled error in saveSubmission:', e);
         // Even if saveSubmission throws, localStorage already saved — treat as localOk.
