@@ -420,14 +420,17 @@
         result = await saveSubmission(submission);
       } catch (e) {
         console.error('[Submit] Unhandled error in saveSubmission:', e);
-        result = { ok: false, error: e.message || 'Unknown error' };
+        // Even if saveSubmission throws, localStorage already saved — treat as localOk.
+        result = { localOk: true, cloudOk: false, error: e.message || 'Unknown error' };
       } finally {
+        // Always restore button — no matter what happens above.
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Walkthrough';
       }
 
-      if (!result.ok) {
-        errorEl.textContent = 'Could not save to server. Your data is cached locally — please try again.';
+      // Gate on localOk only. Cloud failure is a warning, not a blocker.
+      if (!result.localOk) {
+        errorEl.textContent = 'Failed to save. Please try again.';
         errorEl.classList.add('show');
         return;
       }
@@ -435,6 +438,10 @@
       // Show success overlay
       const noCount  = ALL_QUESTION_IDS.filter(id => answers[id] === 'No').length;
       const yesCount = ALL_QUESTION_IDS.filter(id => answers[id] === 'Yes').length;
+
+      const cloudWarning = result.cloudOk ? '' :
+        '<div class="success-meta-row" style="color:#b45309;font-size:0.8rem;border-top:1px solid var(--border,#e5e7eb);margin-top:0.5rem;padding-top:0.5rem;">' +
+        '<span>&#9888; Cloud sync</span><span>Saved locally — will sync when reconnected</span></div>';
 
       document.getElementById('successMeta').innerHTML =
         '<div class="success-meta-row"><span>Submission ID</span><span>' + submission.id.split('-').pop() + '</span></div>' +
@@ -444,7 +451,8 @@
         '<div class="success-meta-row"><span>No Answers</span><span style="color:var(--red);font-weight:700;">' + noCount + '</span></div>' +
         (ImageStore.totalCount() > 0
           ? '<div class="success-meta-row"><span>Photos Attached</span><span style="color:#1a3fa0;font-weight:700;">' + ImageStore.totalCount() + '</span></div>'
-          : '');
+          : '') +
+        cloudWarning;
 
       document.getElementById('successOverlay').classList.add('show');
     });

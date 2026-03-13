@@ -10,6 +10,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="portal.css?v=8">
   <script src="portal-theme.js"></script>
+  <style>
+    /* Submission detail modal */
+    .sub-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:900;padding:1rem;box-sizing:border-box;align-items:center;justify-content:center}
+    .sub-overlay.open{display:flex}
+    .sub-modal{background:var(--card-bg,#fff);border-radius:14px;width:min(700px,100%);max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22);display:flex;flex-direction:column}
+    .sub-modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:1.2rem 1.5rem 1rem;border-bottom:1px solid var(--border,#e5e7eb);position:sticky;top:0;background:var(--card-bg,#fff);z-index:1}
+    .sub-modal-hdr h2{margin:0;font-size:1.05rem}
+    .sub-modal-sub{margin:.2rem 0 0;font-size:.82rem;color:var(--text-light,#6b7280)}
+    .sub-modal-close{background:none;border:none;font-size:1.6rem;line-height:1;cursor:pointer;color:var(--text-light,#6b7280);padding:0 .2rem;flex-shrink:0}
+    .sub-modal-body{padding:1.25rem 1.5rem 1.75rem}
+    .sub-score-bar{margin-bottom:1.25rem}
+    .sub-score-numbers{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.4rem}
+    .sub-score-pct{font-size:1.5rem;font-weight:800}
+    .sub-score-pct.green{color:#16a34a}.sub-score-pct.yellow{color:#d97706}.sub-score-pct.red{color:#dc2626}
+    .sub-score-track{height:8px;background:var(--border,#e5e7eb);border-radius:99px;overflow:hidden}
+    .sub-score-fill{height:100%;border-radius:99px;transition:width .3s}
+    .sub-score-fill.green{background:#16a34a}.sub-score-fill.yellow{background:#d97706}.sub-score-fill.red{background:#dc2626}
+    .sub-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.5rem;margin-bottom:1.25rem;font-size:.85rem}
+    .sub-meta-item{display:flex;flex-direction:column;gap:.15rem}
+    .sub-meta-label{color:var(--text-light,#6b7280);font-size:.73rem;text-transform:uppercase;letter-spacing:.04em}
+    .sub-section{margin-bottom:1rem}
+    .sub-section-hdr{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem;color:var(--text-light,#6b7280)}
+    .sub-section-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .sub-q-row{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;padding:.32rem 0;border-bottom:1px solid var(--border,#f3f4f6);font-size:.84rem}
+    .sub-q-row:last-child{border-bottom:none}
+    .sub-q-text{flex:1;line-height:1.4}
+    .sub-q-note{font-size:.75rem;color:var(--text-light,#6b7280);margin-top:.18rem;font-style:italic}
+    .sub-badge{font-size:.73rem;font-weight:700;padding:.15rem .55rem;border-radius:99px;flex-shrink:0;white-space:nowrap}
+    .sub-badge.yes{background:#dcfce7;color:#16a34a}.sub-badge.no{background:#fee2e2;color:#dc2626}.sub-badge.na{background:var(--border,#e5e7eb);color:var(--text-light,#6b7280)}
+    .sub-notes-section{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border,#e5e7eb)}
+    .sub-notes-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light,#6b7280);margin-bottom:.4rem}
+    .sub-notes-text{font-size:.88rem;white-space:pre-wrap;line-height:1.6}
+    .portal-table tbody tr{cursor:pointer}
+    .portal-table tbody tr:hover td{background:var(--hover-bg,rgba(0,0,0,.03))}
+  </style>
 </head>
 <body>
 
@@ -121,6 +156,20 @@
 
   </main>
 
+  <!-- SUBMISSION DETAIL MODAL -->
+  <div class="sub-overlay" id="subOverlay" role="dialog" aria-modal="true" aria-labelledby="subModalTitle">
+    <div class="sub-modal" id="subModal">
+      <div class="sub-modal-hdr">
+        <div>
+          <h2 id="subModalTitle">Walkthrough Report</h2>
+          <p class="sub-modal-sub" id="subModalSub"></p>
+        </div>
+        <button class="sub-modal-close" id="subModalClose" aria-label="Close">&times;</button>
+      </div>
+      <div class="sub-modal-body" id="subModalBody"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase-client.js"></script>
   <script src="transitions.js"></script>
@@ -171,7 +220,7 @@
         return;
       }
       tbody.innerHTML = mine.map(function (s) {
-        return '<tr>' +
+        return '<tr data-id="' + s.id + '">' +
           '<td data-label="Date">' + formatDate(s.dateSubmitted) + '</td>' +
           '<td data-label="Store #"><span class="badge-store">' + (s.storeNumber || '—') + '</span></td>' +
           '<td data-label="Store Name">' + (s.storeName || '—') + '</td>' +
@@ -239,6 +288,102 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    });
+
+    // --- Submission Detail Modal ---
+    function openSubmissionDetail(id) {
+      var s = _submissionsCache.find(function (x) { return x.id === id; });
+      if (!s) return;
+
+      var yesCount   = ALL_QUESTION_IDS.filter(function (q) { return s.answers && s.answers[q] === 'Yes'; }).length;
+      var noCount    = ALL_QUESTION_IDS.filter(function (q) { return s.answers && s.answers[q] === 'No'; }).length;
+      var answered   = yesCount + noCount;
+      var pct        = answered > 0 ? Math.round((yesCount / answered) * 100) : 0;
+      var scoreColor = pct >= 80 ? 'green' : pct >= 60 ? 'yellow' : 'red';
+      var scoreLabel = pct >= 80 ? 'Passing' : pct >= 60 ? 'Needs Work' : 'At Risk';
+
+      document.getElementById('subModalTitle').textContent =
+        'Store ' + (s.storeNumber || '—') + ' \u2014 Walkthrough Report';
+      document.getElementById('subModalSub').textContent = formatDate(s.dateSubmitted);
+
+      var html = '';
+
+      // Score bar
+      html += '<div class="sub-score-bar">' +
+        '<div class="sub-score-numbers">' +
+        '<span class="sub-score-pct ' + scoreColor + '">' + (answered > 0 ? pct + '%' : '\u2014') + '</span>' +
+        '<span style="font-size:.82rem;color:var(--text-light,#6b7280)">' +
+          yesCount + ' yes \u00b7 ' + noCount + ' no \u00b7 ' + scoreLabel +
+        '</span></div>' +
+        '<div class="sub-score-track"><div class="sub-score-fill ' + scoreColor + '" style="width:' + pct + '%"></div></div>' +
+        '</div>';
+
+      // Meta grid
+      html += '<div class="sub-meta-grid">' +
+        '<div class="sub-meta-item"><span class="sub-meta-label">Prepared By</span><span>' + (s.preparedBy || '\u2014') + '</span></div>' +
+        '<div class="sub-meta-item"><span class="sub-meta-label">Submitted By</span><span>' + (s.username || '\u2014') + '</span></div>' +
+        '<div class="sub-meta-item"><span class="sub-meta-label">Conducted On</span><span>' + (s.conductedOn ? s.conductedOn.replace('T', ' ') : '\u2014') + '</span></div>' +
+        '<div class="sub-meta-item"><span class="sub-meta-label">Submission ID</span><span style="font-size:.78rem">' + shortId(s.id) + '</span></div>' +
+        '</div>';
+
+      // Section-by-section questions
+      FORM_SECTIONS.forEach(function (sec) {
+        html += '<div class="sub-section"><div class="sub-section-hdr">' +
+          '<div class="sub-section-dot" style="background:' + sec.color + '"></div>' + sec.title +
+          '</div>';
+        sec.questions.forEach(function (q) {
+          var ans  = s.answers ? s.answers[q.id] : null;
+          var note = s.questionNotes ? s.questionNotes[q.id] : null;
+          var bc   = ans === 'Yes' ? 'yes' : ans === 'No' ? 'no' : 'na';
+          html += '<div class="sub-q-row">' +
+            '<div><div class="sub-q-text">' + q.text + '</div>' +
+            (note ? '<div class="sub-q-note">\u270f\ufe0f ' + note + '</div>' : '') +
+            '</div><span class="sub-badge ' + bc + '">' + (ans || '\u2014') + '</span></div>';
+        });
+        html += '</div>';
+      });
+
+      // Noteworthy question
+      if (s.answers && s.answers['noteworthy']) {
+        var nw = s.answers['noteworthy'];
+        html += '<div class="sub-section"><div class="sub-section-hdr">' +
+          '<div class="sub-section-dot" style="background:#6366f1"></div>Noteworthy</div>' +
+          '<div class="sub-q-row"><div class="sub-q-text">Does this store have something noteworthy to share?</div>' +
+          '<span class="sub-badge ' + (nw === 'Yes' ? 'yes' : 'no') + '">' + nw + '</span></div></div>';
+      }
+
+      // Overall notes
+      if (s.notes) {
+        html += '<div class="sub-notes-section"><div class="sub-notes-label">Additional Notes</div>' +
+          '<div class="sub-notes-text">' +
+          s.notes.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+          '</div></div>';
+      }
+
+      document.getElementById('subModalBody').innerHTML = html;
+      document.getElementById('subModal').scrollTop = 0;
+      document.getElementById('subOverlay').classList.add('open');
+    }
+
+    function closeSubmissionDetail() {
+      document.getElementById('subOverlay').classList.remove('open');
+    }
+
+    // Row click — event delegation so it works after async render
+    document.getElementById('myTableBody').addEventListener('click', function (e) {
+      var row = e.target.closest('tr[data-id]');
+      if (row) openSubmissionDetail(row.dataset.id);
+    });
+
+    // Close handlers
+    document.getElementById('subModalClose').addEventListener('click', closeSubmissionDetail);
+    document.getElementById('subOverlay').addEventListener('click', function (e) {
+      if (e.target === this) closeSubmissionDetail();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.getElementById('subOverlay').classList.contains('open')) {
+        closeSubmissionDetail();
+      }
     });
 
     // --- Init ---

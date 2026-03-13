@@ -53,7 +53,10 @@ function _cacheSubmission(submission) {
   localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
 }
 
-// Primary save: Supabase first, localStorage as offline cache
+// Primary save: localStorage always first, then Supabase with timeout.
+// Returns { localOk, cloudOk, error }.
+// localOk is always true — _cacheSubmission is synchronous and never throws.
+// cloudOk reflects whether Supabase accepted the row.
 async function saveSubmission(submission) {
   // Images are base64 dataUrls — kept in localStorage only to avoid
   // exceeding Supabase's HTTP payload limit (~1 MB).
@@ -70,36 +73,40 @@ async function saveSubmission(submission) {
     question_notes: submission.questionNotes
   };
 
-  // Always cache locally first (includes images)
+  // localStorage is always the primary source of truth.
   _cacheSubmission(submission);
 
   if (typeof supabaseClient === 'undefined') {
     console.warn('[Supabase] Client not available — saved to localStorage only.');
-    return { ok: true, error: null };
+    return { localOk: true, cloudOk: false, error: 'Supabase client not initialized' };
   }
 
-  console.log('[Supabase] Attempting insert for submission:', submission.id);
-  console.log('[Supabase] Row being sent:', JSON.stringify(row).slice(0, 300) + '…');
+  console.log('[Supabase] Attempting insert:', submission.id);
 
   try {
-    const { data, error } = await supabaseClient
-      .from('inspections')
-      .insert([row]);
+    // Race insert against a 10s timeout. If the network stalls the
+    // Supabase promise hangs forever — this guarantees it always resolves.
+    const timeoutPromise = new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve({ data: null, error: { message: 'Request timed out (10s)', code: 'TIMEOUT', details: '', hint: '' } });
+      }, 10000);
+    });
+
+    const { data, error } = await Promise.race([
+      supabaseClient.from('inspections').insert([row]),
+      timeoutPromise
+    ]);
 
     if (error) {
-      console.error('[Supabase] Insert FAILED:', error);
-      console.error('[Supabase] Error code:', error.code);
-      console.error('[Supabase] Error message:', error.message);
-      console.error('[Supabase] Error details:', error.details);
-      console.error('[Supabase] Error hint:', error.hint);
-      return { ok: false, error: error.message };
+      console.error('[Supabase] Insert FAILED — code:', error.code, '| msg:', error.message, '| hint:', error.hint);
+      return { localOk: true, cloudOk: false, error: error.message };
     }
 
-    console.log('[Supabase] Insert SUCCESS. Response:', data);
-    return { ok: true, error: null };
+    console.log('[Supabase] Insert SUCCESS:', data);
+    return { localOk: true, cloudOk: true, error: null };
   } catch (e) {
-    console.error('[Supabase] Unexpected exception during insert:', e);
-    return { ok: false, error: e.message || 'Unknown error' };
+    console.error('[Supabase] Unexpected exception:', e);
+    return { localOk: true, cloudOk: false, error: e.message || 'Unknown error' };
   }
 }
 
