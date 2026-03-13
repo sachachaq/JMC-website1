@@ -81,21 +81,26 @@ async function saveSubmission(submission) {
   console.log('[Supabase] Attempting insert for submission:', submission.id);
   console.log('[Supabase] Row being sent:', JSON.stringify(row).slice(0, 300) + '…');
 
-  const { data, error } = await supabaseClient
-    .from('inspections')
-    .insert([row]);
+  try {
+    const { data, error } = await supabaseClient
+      .from('inspections')
+      .insert([row]);
 
-  if (error) {
-    console.error('[Supabase] Insert FAILED:', error);
-    console.error('[Supabase] Error code:', error.code);
-    console.error('[Supabase] Error message:', error.message);
-    console.error('[Supabase] Error details:', error.details);
-    console.error('[Supabase] Error hint:', error.hint);
-    return { ok: false, error: error.message };
+    if (error) {
+      console.error('[Supabase] Insert FAILED:', error);
+      console.error('[Supabase] Error code:', error.code);
+      console.error('[Supabase] Error message:', error.message);
+      console.error('[Supabase] Error details:', error.details);
+      console.error('[Supabase] Error hint:', error.hint);
+      return { ok: false, error: error.message };
+    }
+
+    console.log('[Supabase] Insert SUCCESS. Response:', data);
+    return { ok: true, error: null };
+  } catch (e) {
+    console.error('[Supabase] Unexpected exception during insert:', e);
+    return { ok: false, error: e.message || 'Unknown error' };
   }
-
-  console.log('[Supabase] Insert SUCCESS. Response:', data);
-  return { ok: true, error: null };
 }
 
 // Primary read: Supabase first, localStorage fallback

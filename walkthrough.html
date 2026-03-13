@@ -415,10 +415,16 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Saving…';
 
-      const result = await saveSubmission(submission);
-
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Submit Walkthrough';
+      let result;
+      try {
+        result = await saveSubmission(submission);
+      } catch (e) {
+        console.error('[Submit] Unhandled error in saveSubmission:', e);
+        result = { ok: false, error: e.message || 'Unknown error' };
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Walkthrough';
+      }
 
       if (!result.ok) {
         errorEl.textContent = 'Could not save to server. Your data is cached locally — please try again.';
