@@ -23,15 +23,15 @@ function shortId(id) {
 function inspectionType(s) {
   if (s.inspectionType) return s.inspectionType;
   const id = s.id || '';
-  if (id.startsWith('OA-')) return 'Operations Assessment';
+  if (id.startsWith('OA-'))  return 'Operations Assessment';
   if (id.startsWith('FSE-')) return 'FSE';
   return 'Walkthrough';
 }
 
 // Calculate score from answers.
 function calcScore(s) {
-  const yes = ALL_QUESTION_IDS.filter(q => s.answers && s.answers[q] === 'Yes').length;
-  const no  = ALL_QUESTION_IDS.filter(q => s.answers && s.answers[q] === 'No').length;
+  const yes   = ALL_QUESTION_IDS.filter(q => s.answers && s.answers[q] === 'Yes').length;
+  const no    = ALL_QUESTION_IDS.filter(q => s.answers && s.answers[q] === 'No').length;
   const total = yes + no;
   return { yes, no, total, pct: total > 0 ? Math.round(yes / total * 100) : null };
 }
@@ -46,14 +46,61 @@ function scoreLabel(pct) {
   return pct >= 80 ? 'Passing' : pct >= 60 ? 'Needs Work' : 'At Risk';
 }
 
+// ---- Image helpers ----
+
+// Fetch an image URL as a base64 dataUrl for PDF embedding.
+// Falls back gracefully so a failed image never breaks the PDF.
+async function _fetchAsDataUrl(src) {
+  if (!src) return null;
+  if (src.startsWith('data:')) return src;
+  try {
+    const resp = await fetch(src);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const blob = await resp.blob();
+    return await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.warn('[PDF] Could not fetch image for PDF:', e.message);
+    return null;
+  }
+}
+
+// Refresh signed URLs for a single submission right before displaying it.
+// Returns an enriched copy of s (never mutates the original).
+async function _refreshSignedUrls(s) {
+  if (!s.images || typeof _enrichWithSignedUrls === 'undefined') return s;
+  try {
+    const enriched = await _enrichWithSignedUrls([s]);
+    return enriched[0] || s;
+  } catch (e) {
+    console.warn('[Report] Could not refresh signed URLs:', e.message);
+    return s;
+  }
+}
+
 // ---- Modal ----
 
-function openReportModal(s) {
+async function openReportModal(s) {
   if (!s) return;
+
+  // Show modal immediately with a loading indicator, then populate once URLs are ready.
+  const overlay = document.getElementById('subOverlay');
+  const body    = document.getElementById('subModalBody');
+  document.getElementById('subModalTitle').textContent = 'Loading\u2026';
+  document.getElementById('subModalSub').textContent   = '';
+  if (body)    body.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-light,#6b7280)">Loading report\u2026</div>';
+  if (overlay) overlay.classList.add('open');
+  document.getElementById('subModal').scrollTop = 0;
+
+  // Refresh signed URLs so images are guaranteed fresh.
+  s = await _refreshSignedUrls(s);
   _currentReport = s;
 
   const sc = calcScore(s);
-
   document.getElementById('subModalTitle').textContent =
     'Store ' + (s.storeNumber || '\u2014') + ' \u2014 ' + inspectionType(s) + ' Report';
   document.getElementById('subModalSub').textContent = formatDate(s.dateSubmitted);
@@ -120,18 +167,18 @@ function openReportModal(s) {
       '</div></div>';
   }
 
-  document.getElementById('subModalBody').innerHTML = html;
+  if (body) body.innerHTML = html;
   document.getElementById('subModal').scrollTop = 0;
-  document.getElementById('subOverlay').classList.add('open');
 }
 
+// Render image thumbnails — no crossorigin attribute so images load regardless of CORS policy.
 function _renderThumbs(imgs) {
   if (!imgs || !imgs.length) return '';
   let out = '<div class="sub-img-row">';
   imgs.forEach(function (img) {
     const src = img.url || img.dataUrl || '';
     if (!src) return;
-    out += '<img src="' + src + '" crossorigin="anonymous" class="sub-img-thumb" ' +
+    out += '<img src="' + src + '" class="sub-img-thumb" ' +
       'onclick="window.open(this.src,\'_blank\')" alt="evidence photo" loading="lazy">';
   });
   return out + '</div>';
@@ -143,12 +190,17 @@ function closeReportModal() {
 
 // ---- PDF ----
 
-function downloadReportPDF() {
-  if (_currentReport) _buildPDF(_currentReport);
+async function downloadReportPDF() {
+  if (!_currentReport) return;
+  const btn = document.getElementById('subPdfBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparing\u2026'; }
+  // Re-fetch fresh signed URLs so all images are valid at export time.
+  let s = await _refreshSignedUrls(_currentReport);
+  await _buildPDF(s, btn);
 }
 
-async function _buildPDF(s) {
-  const btn = document.getElementById('subPdfBtn');
+async function _buildPDF(s, btn) {
+  if (!btn) btn = document.getElementById('subPdfBtn');
   if (btn) { btn.disabled = true; btn.textContent = 'Building\u2026'; }
 
   try {
@@ -276,48 +328,56 @@ async function _buildPDF(s) {
       doc.text(nLines, ML, y); y += nLines.length * 12;
     }
 
-    // Photos
+    // Photos — fetch all images concurrently then embed
     const imgEntries = Object.entries(s.images || {}).filter(([, imgs]) => imgs?.length);
     if (imgEntries.length > 0) {
-      newPage();
-      doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
-      doc.text('PHOTOS', ML, y); y += 14;
-      const imgW = (CW - 10) / 2, imgH = imgW * 0.75;
-
-      for (const [qid, imgs] of imgEntries) {
-        const qText  = QUESTION_TEXT_MAP[qid] || qid;
-        const qLines = doc.splitTextToSize(qText, CW);
-        check(20);
-        doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(40, 40, 40);
-        doc.text(qLines, ML, y); y += qLines.length * 11 + 4;
-
-        let col = 0;
-        for (const img of imgs) {
+      // Pre-fetch all image data before writing to PDF
+      if (btn) btn.textContent = 'Loading photos\u2026';
+      const fetchJobs = [];
+      imgEntries.forEach(([qid, imgs]) => {
+        imgs.forEach(img => {
           const src = img.url || img.dataUrl || '';
-          if (!src) continue;
-          try {
-            let dataUrl;
-            if (src.startsWith('data:')) {
-              dataUrl = src;
-            } else {
-              const resp = await fetch(src, { mode: 'cors' });
-              if (!resp.ok) throw new Error('HTTP ' + resp.status);
-              const blob = await resp.blob();
-              dataUrl = await new Promise((res, rej) => {
-                const r = new FileReader();
-                r.onload = () => res(r.result);
-                r.onerror = rej;
-                r.readAsDataURL(blob);
-              });
-            }
-            check(imgH + 8);
-            doc.addImage(dataUrl, 'JPEG', ML + col * (imgW + 10), y, imgW, imgH);
-            col++;
-            if (col >= 2) { col = 0; y += imgH + 8; }
-          } catch (e) { console.warn('[PDF] Could not embed image:', e.message); }
+          fetchJobs.push(
+            _fetchAsDataUrl(src).then(dataUrl => ({ qid, img, dataUrl }))
+          );
+        });
+      });
+      const fetched = await Promise.all(fetchJobs);
+
+      // Group by qid preserving order
+      const byQid = {};
+      fetched.forEach(({ qid, img, dataUrl }) => {
+        if (!byQid[qid]) byQid[qid] = [];
+        if (dataUrl) byQid[qid].push({ img, dataUrl });
+      });
+
+      const hasAnyPhoto = Object.values(byQid).some(arr => arr.length > 0);
+      if (hasAnyPhoto) {
+        newPage();
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+        doc.text('PHOTOS', ML, y); y += 14;
+        const imgW = (CW - 10) / 2, imgH = imgW * 0.75;
+
+        for (const [qid, items] of Object.entries(byQid)) {
+          if (!items.length) continue;
+          const qText  = QUESTION_TEXT_MAP[qid] || qid;
+          const qLines = doc.splitTextToSize(qText, CW);
+          check(20);
+          doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(40, 40, 40);
+          doc.text(qLines, ML, y); y += qLines.length * 11 + 4;
+
+          let col = 0;
+          for (const { dataUrl } of items) {
+            try {
+              check(imgH + 8);
+              doc.addImage(dataUrl, 'JPEG', ML + col * (imgW + 10), y, imgW, imgH);
+              col++;
+              if (col >= 2) { col = 0; y += imgH + 8; }
+            } catch (e) { console.warn('[PDF] addImage failed:', e.message); }
+          }
+          if (col > 0) y += imgH + 8;
+          y += 6;
         }
-        if (col > 0) y += imgH + 8;
-        y += 6;
       }
     }
 

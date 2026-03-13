@@ -73,7 +73,8 @@ async function uploadImagesToStorage(submissionId, username, imagesStore) {
     for (const img of images) {
       if (!img.dataUrl) continue;
       try {
-        const path = `${submissionId}/${qid}/${img.id}.jpg`;
+        const shortId = submissionId.split('-').pop();
+        const path = `${shortId}/${qid}_${img.id}.jpg`;
         const blob = _dataUrlToBlob(img.dataUrl);
         const { error } = await supabaseClient.storage
           .from(STORAGE_BUCKET)
@@ -109,29 +110,39 @@ async function _enrichWithSignedUrls(submissions) {
 
   if (!allPaths.length) return submissions;
 
-  // 2. Single batch call — Supabase generates all signed URLs in one request.
-  //    Expiry: 1 hour (3600 s). Re-loading the page refreshes them.
-  const { data: signed, error } = await supabaseClient.storage
-    .from(STORAGE_BUCKET)
-    .createSignedUrls(allPaths, 3600);
+  console.log('[Storage] Requesting signed URLs for', allPaths.length, 'image(s)...');
+  const urlMap = {};
 
-  if (error || !signed) {
-    console.warn('[Storage] Could not generate signed URLs:', error?.message);
-    return submissions; // Return without URLs — report.js falls back to dataUrl
+  try {
+    // Batch call — one round-trip for all paths.
+    const { data: signed, error } = await supabaseClient.storage
+      .from(STORAGE_BUCKET)
+      .createSignedUrls(allPaths, 3600);
+    if (error) throw new Error(error.message);
+    if (!signed?.length) throw new Error('Empty response');
+    signed.forEach(item => { if (item.signedUrl) urlMap[item.path] = item.signedUrl; });
+    console.log('[Storage] Signed URLs OK:', Object.keys(urlMap).length);
+  } catch (batchErr) {
+    console.warn('[Storage] Batch failed, trying individual calls:', batchErr.message);
+    for (const path of allPaths) {
+      try {
+        const { data, error } = await supabaseClient.storage
+          .from(STORAGE_BUCKET).createSignedUrl(path, 3600);
+        if (!error && data?.signedUrl) urlMap[path] = data.signedUrl;
+        else if (error) console.warn('[Storage] createSignedUrl failed:', path, error.message);
+      } catch (e) { console.warn('[Storage] createSignedUrl exception:', path, e.message); }
+    }
+    console.log('[Storage] Individual signed URLs resolved:', Object.keys(urlMap).length);
   }
 
-  // 3. Build path → signedUrl lookup.
-  const urlMap = {};
-  signed.forEach(item => { if (item.signedUrl) urlMap[item.path] = item.signedUrl; });
-
-  // 4. Stamp each image with its signed URL.
+  // Stamp each image with its signed URL.
   return submissions.map(s => {
     if (!s.images) return s;
     const enriched = {};
     Object.entries(s.images).forEach(([qid, imgs]) => {
       enriched[qid] = (imgs || []).map(img => ({
         ...img,
-        url: img.path ? (urlMap[img.path] || null) : img.url
+        url: img.path ? (urlMap[img.path] || img.url || null) : img.url
       }));
     });
     return { ...s, images: enriched };

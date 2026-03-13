@@ -15,10 +15,10 @@
     .sub-list { display: flex; flex-direction: column; gap: 0; }
     .sub-card {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: 1fr auto;
       align-items: center;
       gap: 0 1.25rem;
-      padding: 1rem 1.375rem;
+      padding: 0.875rem 1.375rem;
       border-bottom: 1px solid var(--border, #f1f1f1);
       cursor: pointer;
       transition: background .13s;
@@ -29,48 +29,31 @@
     .sub-card:hover { background: var(--hover-bg, rgba(0,0,0,.025)); }
     .sub-card:active { background: var(--hover-bg, rgba(0,0,0,.04)); }
 
-    /* Type badge column */
-    .sub-card-type {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.3rem;
-      min-width: 48px;
+    /* Left content block */
+    .sub-card-left { min-width: 0; }
+    .sub-card-headline {
+      display: flex; align-items: center; gap: 0.45rem;
+      line-height: 1;
     }
-    .sub-type-dot {
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.65rem; font-weight: 800;
-      letter-spacing: .04em; text-transform: uppercase;
-      color: #fff; flex-shrink: 0;
+    .sub-type-pill {
+      font-size: 0.7rem; font-weight: 700;
+      padding: 0.18rem 0.55rem;
+      border-radius: 99px;
+      letter-spacing: .02em;
+      white-space: nowrap; flex-shrink: 0;
+      line-height: 1.5;
     }
-    .sub-type-label {
-      font-size: 0.62rem; font-weight: 600;
-      color: var(--text-light, #6b7280);
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      text-align: center;
-      line-height: 1.2;
-      max-width: 52px;
-    }
-
-    /* Center column */
-    .sub-card-center { min-width: 0; }
     .sub-card-store {
-      font-size: 1.1rem; font-weight: 800;
+      font-size: 0.97rem; font-weight: 700;
       color: var(--text, #0f172a);
-      line-height: 1.1;
-      letter-spacing: -.01em;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .sub-card-meta {
-      display: flex; align-items: center; gap: 0.5rem;
-      margin-top: 0.22rem;
-      font-size: 0.8rem;
+      margin-top: 0.28rem;
+      font-size: 0.78rem;
       color: var(--text-light, #6b7280);
-      flex-wrap: wrap;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .sub-card-meta-sep { opacity: .35; }
 
     /* Score column */
     .sub-card-score {
@@ -330,18 +313,14 @@
           condDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
+        const pillBg = tm.bg + '1a';  // hex + 10% alpha
         return '<div class="sub-card" data-id="' + s.id + '" role="button" tabindex="0">' +
-          '<div class="sub-card-type">' +
-            '<div class="sub-type-dot" style="background:' + tm.bg + '">' + tm.abbr + '</div>' +
-            '<span class="sub-type-label">' + type + '</span>' +
-          '</div>' +
-          '<div class="sub-card-center">' +
-            '<div class="sub-card-store">Store ' + (s.storeNumber || '\u2014') + '</div>' +
-            '<div class="sub-card-meta">' +
-              '<span>' + (s.preparedBy || s.username || '\u2014') + '</span>' +
-              '<span class="sub-card-meta-sep">\u00b7</span>' +
-              '<span>' + condDate + '</span>' +
+          '<div class="sub-card-left">' +
+            '<div class="sub-card-headline">' +
+              '<span class="sub-type-pill" style="background:' + pillBg + ';color:' + tm.bg + '">' + type + '</span>' +
+              '<span class="sub-card-store">\u2022 Store ' + (s.storeNumber || '\u2014') + '</span>' +
             '</div>' +
+            '<div class="sub-card-meta">Prepared by ' + (s.preparedBy || s.username || '\u2014') + ' \u00b7 ' + condDate + '</div>' +
           '</div>' +
           '<div class="sub-card-score">' + pctHtml + '</div>' +
           '</div>';
