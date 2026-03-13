@@ -36,6 +36,344 @@ body.page-exit  { animation: pageExit 0.21s ease-in both; pointer-events: none; 
   --font: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
+/* ===== THEME TRANSITIONS ===== */
+body,
+.portal-header,
+.portal-card,
+.wt-section,
+.wt-title-card,
+.wt-notes-card,
+.wt-question-row,
+.wt-toggle-btn,
+.imu-zone,
+.note-zone,
+.note-textarea,
+.success-box,
+.success-meta,
+.oa-score-card,
+.oa-sub-block,
+.oa-item-label,
+.penalty-note {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.22s;
+  transition-timing-function: ease;
+}
+
+/* ===== DARK MODE ===== */
+html[data-theme="dark"] {
+  --bg:           #0f172a;
+  --bg-card:      #1e293b;
+  --text:         #f1f5f9;
+  --text-mid:     #cbd5e1;
+  --text-light:   #94a3b8;
+  --border:       #334155;
+  --border-light: #1e293b;
+  --blue-subtle:  #0c2d48;
+  --green-subtle: #052e16;
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.25);
+  --shadow:       0 4px 12px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md:    0 8px 24px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.25);
+  color-scheme: dark;
+}
+html[data-theme="dark"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+html[data-theme="dark"] .portal-header {
+  background: rgba(15,23,42,0.95);
+  border-bottom-color: var(--border);
+  box-shadow: 0 1px 0 var(--border), 0 2px 10px rgba(0,0,0,0.4);
+}
+/* Card surfaces */
+html[data-theme="dark"] .portal-card,
+html[data-theme="dark"] .wt-title-card,
+html[data-theme="dark"] .wt-section,
+html[data-theme="dark"] .wt-notes-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+}
+html[data-theme="dark"] .portal-card:hover {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.25);
+}
+/* Forms */
+html[data-theme="dark"] .wt-form-group input,
+html[data-theme="dark"] .wt-form-group select,
+html[data-theme="dark"] .wt-form-group textarea,
+html[data-theme="dark"] .wt-notes-card textarea {
+  background: #0f172a;
+  color: var(--text);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .wt-form-group input::placeholder,
+html[data-theme="dark"] .wt-form-group textarea::placeholder,
+html[data-theme="dark"] .wt-notes-card textarea::placeholder { color: var(--text-light); }
+html[data-theme="dark"] .wt-form-group input:focus,
+html[data-theme="dark"] .wt-form-group select:focus,
+html[data-theme="dark"] .wt-form-group textarea:focus,
+html[data-theme="dark"] .wt-notes-card textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,120,172,0.2);
+}
+/* Toggle buttons */
+html[data-theme="dark"] .wt-toggle-btn {
+  background: #243044;
+  border-color: var(--border);
+  color: var(--text-light);
+}
+html[data-theme="dark"] .wt-toggle-btn:hover { border-color: var(--text-light); }
+html[data-theme="dark"] .wt-toggle-btn.yes-active {
+  background: #052e16;
+  border-color: #16a34a;
+  color: #4ade80;
+}
+html[data-theme="dark"] .wt-toggle-btn.no-active {
+  background: #2d1515;
+  border-color: var(--red);
+  color: #f87171;
+}
+/* Question rows */
+html[data-theme="dark"] .wt-question-row { border-bottom-color: var(--border); }
+html[data-theme="dark"] .wt-question-row.answer-no  { background: #2d1515; }
+html[data-theme="dark"] .wt-question-row.unanswered {
+  background: #261e00;
+  outline-color: #d97706;
+}
+/* Section structure */
+html[data-theme="dark"] .wt-section-header { border-bottom-color: var(--border); }
+html[data-theme="dark"] .wt-section-count  { color: var(--text-light); }
+/* Upload zones */
+html[data-theme="dark"] .imu-zone {
+  background: #172033;
+  border-top-color: var(--border);
+}
+html[data-theme="dark"] .imu-zone.imu-zone-encouraged {
+  background: #1c1800;
+  border-top-color: #78550a;
+}
+html[data-theme="dark"] .imu-zone.imu-zone-required {
+  background: #2d1515;
+  border-top-color: #7f1d1d;
+}
+html[data-theme="dark"] .imu-zone.imu-drag {
+  background: #0c1e3d;
+  border-top-color: var(--blue);
+}
+/* Note zones */
+html[data-theme="dark"] .note-zone {
+  background: #172033;
+  border-top-color: var(--border);
+}
+html[data-theme="dark"] .note-zone.note-zone-open {
+  background: #0a1f0f;
+  border-top-color: #166534;
+}
+html[data-theme="dark"] .note-textarea {
+  background: #0f172a;
+  color: var(--text);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .note-textarea::placeholder { color: var(--text-light); }
+html[data-theme="dark"] .note-textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,120,172,0.15);
+}
+/* Tables */
+html[data-theme="dark"] .portal-table th {
+  background: #162032;
+  color: var(--text-light);
+  border-bottom-color: var(--border);
+}
+html[data-theme="dark"] .portal-table td {
+  color: var(--text-mid);
+  border-bottom-color: var(--border-light);
+}
+html[data-theme="dark"] .portal-table tbody tr:hover { background: #243044; }
+/* Success overlay */
+html[data-theme="dark"] .success-overlay { background: rgba(0,0,0,0.75); }
+html[data-theme="dark"] .success-box {
+  background: var(--bg-card);
+  color: var(--text);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+html[data-theme="dark"] .success-icon { background: #052e16; }
+html[data-theme="dark"] .success-meta { background: #0f172a; }
+html[data-theme="dark"] .success-meta-row { border-bottom-color: var(--border); }
+html[data-theme="dark"] .success-meta-row span:first-child { color: var(--text-light); }
+html[data-theme="dark"] .success-meta-row span:last-child  { color: var(--text); }
+/* Buttons */
+html[data-theme="dark"] .btn-logout {
+  color: var(--text-light);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .btn-logout:hover {
+  background: var(--bg-card);
+  color: var(--text);
+  border-color: var(--text-light);
+}
+/* Badges */
+html[data-theme="dark"] .badge-store {
+  background: var(--blue-subtle);
+  border-color: rgba(0,120,172,0.25);
+}
+/* Explicit text color overrides — ensure legibility on dark surfaces */
+html[data-theme="dark"] .wt-question-text   { color: var(--text); }
+html[data-theme="dark"] .wt-section-title   { color: var(--text); }
+html[data-theme="dark"] .wt-section-count   { color: var(--text-light); }
+html[data-theme="dark"] .wt-title-card h2   { color: var(--text); }
+html[data-theme="dark"] .wt-notes-card h3   { color: var(--text); }
+html[data-theme="dark"] .wt-form-group label { color: var(--text-light); }
+html[data-theme="dark"] .portal-page-title  { color: var(--text); }
+html[data-theme="dark"] .portal-card-header h2 { color: var(--text); }
+html[data-theme="dark"] .wt-notes-card textarea { color: var(--text); }
+html[data-theme="dark"] .noteworthy-row label { color: var(--text); }
+html[data-theme="dark"] .empty-state { color: var(--text-light); }
+
+/* Grade bar dark accents are already dark so they work in both modes */
+
+/* ===== BUTTON CONTRAST — DARK MODE ===== */
+
+/* btn-start: white bg → var(--text) becomes #f1f5f9 in dark = invisible.
+   Force dark text explicitly so white button stays readable on dark CTA card. */
+html[data-theme="dark"] .btn-start {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+html[data-theme="dark"] .btn-start:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* btn-export: --green-subtle becomes #052e16 in dark, --green is #16a34a.
+   Dark green text on very dark green bg = ~3:1 contrast. Boost text to bright green. */
+html[data-theme="dark"] .btn-export {
+  background: rgba(22, 163, 74, 0.12);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.25);
+}
+html[data-theme="dark"] .btn-export:hover {
+  background: rgba(22, 163, 74, 0.2);
+  border-color: rgba(74, 222, 128, 0.45);
+}
+
+/* wt-toggle-btn default: increase text contrast from --text-light to --text-mid */
+html[data-theme="dark"] .wt-toggle-btn {
+  background: #243044;
+  border-color: var(--border);
+  color: var(--text-mid);
+}
+html[data-theme="dark"] .wt-toggle-btn:hover {
+  border-color: var(--text-mid);
+  background: #2d3c56;
+}
+
+/* btn-success-new hover: #e8f4fb is a very light blue — wrong for dark mode */
+html[data-theme="dark"] .btn-success-new:hover {
+  background: rgba(0, 120, 172, 0.18);
+}
+
+/* imu-btn required state: #C62828 dark red on dark bg = low contrast.
+   Use lighter red so it reads clearly. */
+html[data-theme="dark"] .imu-btn.imu-btn-required {
+  color: #f87171;
+}
+html[data-theme="dark"] .imu-btn.imu-btn-encouraged {
+  color: #fb923c;
+}
+
+/* note-btn has-note: --green (#16a34a) on very dark note zone bg = borderline.
+   Use bright green. */
+html[data-theme="dark"] .note-btn.note-btn-has-note {
+  color: #4ade80;
+}
+html[data-theme="dark"] .note-btn.note-btn-has-note:hover {
+  color: #86efac;
+}
+
+/* note-btn default: #bbb is fine on dark, but keep it consistent */
+html[data-theme="dark"] .note-btn {
+  color: #64748b;
+}
+html[data-theme="dark"] .note-btn:hover {
+  color: #94a3b8;
+}
+
+/* ===== OPERATIONS ASSESSMENT — dark overrides for embedded styles ===== */
+html[data-theme="dark"] .oa-score-card {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .oa-score-bar-track { background: var(--border); }
+html[data-theme="dark"] .oa-score-badge {
+  background: #243044;
+  color: var(--text-light);
+}
+html[data-theme="dark"] .oa-score-chip {
+  background: #243044;
+  color: var(--text-light);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .oa-section-score {
+  background: #243044;
+  color: var(--text-light);
+}
+html[data-theme="dark"] .oa-sub-block {
+  background: #1a1614;
+  border-left-color: #E8572A;
+}
+html[data-theme="dark"] .oa-sub-block .wt-question-row {
+  background: #1a1614;
+  border-bottom-color: #2d2620;
+}
+html[data-theme="dark"] .oa-item-label {
+  background: #162032;
+  color: var(--text-light);
+  border-top-color: var(--border);
+}
+html[data-theme="dark"] .penalty-section .wt-section-header {
+  background: #2d1515;
+  border-bottom-color: #7f1d1d;
+}
+html[data-theme="dark"] .penalty-note {
+  background: #2d1515;
+  color: #fca5a5;
+  border-bottom-color: #7f1d1d;
+}
+html[data-theme="dark"] .penalty-row { background: var(--bg-card); }
+html[data-theme="dark"] .penalty-row.answer-no { background: #0d200f !important; }
+html[data-theme="dark"] .penalty-row .wt-toggle-btn.yes-active {
+  background: #2d1515 !important;
+  border-color: var(--red) !important;
+  color: #f87171 !important;
+}
+html[data-theme="dark"] .penalty-row .wt-toggle-btn.no-active {
+  background: #052e16 !important;
+  border-color: var(--green) !important;
+  color: #4ade80 !important;
+}
+
+/* ===== THEME TOGGLE BUTTON ===== */
+.btn-dark-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 7px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s, opacity 0.15s;
+  opacity: 0.4;
+  flex-shrink: 0;
+  min-width: 34px;
+  min-height: 34px;
+}
+.btn-dark-toggle:hover  { opacity: 1; background: rgba(0,0,0,0.07); }
+.btn-dark-toggle svg    { width: 15px; height: 15px; display: block; flex-shrink: 0; }
+html[data-theme="dark"] .btn-dark-toggle { color: #fbbf24; opacity: 0.55; }
+html[data-theme="dark"] .btn-dark-toggle:hover { opacity: 1; background: rgba(255,255,255,0.09); }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -1057,41 +1395,249 @@ body {
 }
 .login-back a:hover { color: rgba(255,255,255,0.75); text-decoration: none; }
 
-/* ===== RESPONSIVE ===== */
-@media (max-width: 640px) {
-  .portal-header { padding: 0 16px; }
-  .portal-content { padding: 20px 16px 56px; }
-  .walkthrough-content { padding: 20px 16px 56px; }
+/* ===== MOBILE HEADER ELEMENTS (hidden on desktop) ===== */
+.portal-toggle-mobile { display: none; }
+.portal-header-row2   { display: none; }
 
-  .cta-walkthrough {
-    flex-direction: column;
-    text-align: center;
-    padding: 28px 24px;
-  }
-  .cta-walkthrough-text p { display: none; }
-  .btn-start { width: 100%; justify-content: center; }
-
-  .portal-card-body { padding: 20px 16px; }
-  .portal-card-header { padding: 16px 16px 12px; }
-
-  .wt-title-card { padding: 20px; }
-  .wt-form-grid  { grid-template-columns: 1fr; }
-
-  .wt-question-row { padding: 12px 16px; gap: 12px; }
-  .wt-section-header { padding: 14px 16px; }
-
-  .wt-notes-card { padding: 20px; }
-
-  .welcome-text { font-size: 0.78rem; }
-
-  .success-box { padding: 32px 24px; }
-  .login-card  { padding: 40px 24px; }
-
-  .portal-user-info { gap: 6px; }
+.mobile-welcome {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-light);
 }
 
+.portal-row2-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-signout-mobile {
+  background: transparent;
+  border: none;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 4px 0;
+  font-family: var(--font);
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s;
+  letter-spacing: 0.01em;
+}
+.btn-signout-mobile:hover { opacity: 1; color: var(--text); }
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Mobile (≤ 768px) — full mobile redesign --- */
+@media (max-width: 768px) {
+
+  /* ── Header: 2-row layout ── */
+  .portal-header {
+    height: auto;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+  }
+  .portal-header-inner {
+    height: 52px;
+    padding: 0 18px;
+    max-width: 100%;
+  }
+  /* Hide desktop user controls */
+  .portal-user          { display: none; }
+  /* Show mobile toggle in row 1 */
+  .portal-toggle-mobile { display: flex; }
+  /* Show mobile info row 2 */
+  .portal-header-row2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Content layout ── */
+  .walkthrough-content { max-width: 100%; }
+  .portal-content {
+    max-width: 100%;
+    padding: 20px 16px 64px;
+  }
+  .portal-page-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  /* ── Action cards ── */
+  .cta-walkthrough {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 14px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+  }
+  .cta-walkthrough::before { opacity: 0.5; }
+  .cta-walkthrough-text    { width: 100%; }
+  .cta-walkthrough-text h2 { font-size: 0.95rem; margin-bottom: 4px; }
+  .cta-walkthrough-text p  {
+    display: block;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.52);
+    margin: 0;
+    line-height: 1.5;
+  }
+  .btn-start {
+    width: 100%;
+    justify-content: center;
+    padding: 13px 20px;
+    min-height: 48px;
+    font-size: 0.88rem;
+    border-radius: 10px;
+  }
+
+  /* ── Portal card ── */
+  .portal-card {
+    margin-bottom: 14px;
+    border-radius: 14px;
+  }
+  .portal-card-header {
+    padding: 16px 16px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .portal-card-header h2 { font-size: 0.875rem; }
+  .btn-export {
+    align-self: stretch;
+    justify-content: center;
+    text-align: center;
+    min-height: 40px;
+    font-size: 0.78rem;
+    border-radius: 8px;
+    padding: 8px 14px;
+  }
+
+  /* ── Table → submission cards ── */
+  .portal-table-wrap  { overflow-x: visible; padding: 0 14px 16px; }
+  .portal-table       { display: block; min-width: 0; }
+  .portal-table thead { display: none; }
+  .portal-table tbody { display: block; }
+  .portal-table tr {
+    display: block;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    margin-bottom: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .portal-table tr:last-child { margin-bottom: 0; }
+  .portal-table td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 0;
+    border: none;
+    font-size: 0.83rem;
+    text-align: right;
+  }
+  .portal-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-light);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: left;
+    padding-top: 1px;
+  }
+  /* Empty state: polished block, no label */
+  .portal-table td.empty-state {
+    display: block;
+    text-align: center;
+    padding: 36px 16px;
+    font-size: 0.875rem;
+    color: var(--text-light);
+    line-height: 1.65;
+  }
+  .portal-table td.empty-state::before { display: none; }
+}
+
+/* --- Mobile (≤ 640px) — small screen refinements --- */
+@media (max-width: 640px) {
+  .portal-header-inner { height: 48px; padding: 0 16px; }
+  .portal-header-row2  { padding: 0 16px 8px; }
+  .portal-brand img    { height: 24px; }
+
+  .walkthrough-content { padding: 16px 14px 64px; }
+
+  /* Walkthrough form */
+  .wt-title-card { padding: 16px; }
+  .wt-form-grid  { grid-template-columns: 1fr; gap: 12px; }
+  .wt-title-card h2 { font-size: 1rem; margin-bottom: 14px; }
+  /* Prevent iOS auto-zoom on focus (font-size must be ≥ 16px) */
+  .wt-form-group input,
+  .wt-form-group select,
+  .wt-form-group textarea { min-height: 44px; font-size: 1rem; }
+
+  /* Question rows */
+  .wt-question-row { flex-wrap: wrap; padding: 12px 14px; gap: 8px; }
+  .wt-question-text  { width: 100%; font-size: 0.875rem; }
+  .wt-toggle-group   { margin-left: auto; }
+  .wt-toggle-btn     { min-height: 44px; min-width: 60px; font-size: 0.82rem; }
+
+  /* Section headers */
+  .wt-section-header { padding: 12px 14px; gap: 10px; }
+  .wt-section-title  { font-size: 0.9rem; }
+  .wt-section-count  { font-size: 0.75rem; }
+
+  /* Notes card */
+  .wt-notes-card { padding: 16px; }
+  .noteworthy-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+
+  /* Upload & note zones */
+  .imu-zone  { padding-left: 14px; padding-right: 14px; }
+  .note-zone { padding-left: 14px; padding-right: 14px; }
+
+  /* Success overlay — bottom sheet */
+  .success-overlay { align-items: flex-end; padding: 0; }
+  .success-box {
+    padding: 28px 20px 40px;
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+  }
+  .success-actions { flex-direction: column; gap: 10px; }
+  .btn-success-dashboard,
+  .btn-success-new {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    min-height: 48px;
+  }
+
+  /* Login */
+  .login-card { padding: 36px 20px; }
+  .login-home-logo { top: 16px; left: 16px; }
+  .login-home-logo img { height: 30px; }
+  .login-form input { min-height: 44px; font-size: 1rem; }
+  .btn-login { min-height: 48px; }
+}
+
+/* --- Small phones (≤ 430px) --- */
+@media (max-width: 430px) {
+  .portal-page-title { font-size: 0.95rem; }
+}
+
+/* --- Very small (≤ 380px) --- */
 @media (max-width: 380px) {
-  .wt-toggle-btn { width: 56px; height: 34px; font-size: 0.8rem; }
+  .mobile-welcome      { display: none; }
+  .portal-header-inner { gap: 8px; }
 }
 
 /* ===== SHARED: TOGGLE BUTTON TRANSITION ===== */
@@ -1192,4 +1738,57 @@ body {
 }
 @media (max-width: 640px) {
   .imu-zone { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ===== QUESTION NOTE ZONES ===== */
+.note-zone {
+  padding: 5px 20px 7px;
+  background: #fafafa;
+  border-top: 1px dashed #ebebeb;
+  transition: background 0.18s, border-color 0.18s;
+}
+.note-zone.note-zone-open {
+  background: #f9fff9;
+  border-top-color: #c8e6c9;
+}
+.note-btn-row { display: flex; align-items: center; }
+.note-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #bbb;
+  background: none;
+  border: none;
+  padding: 3px 0;
+  cursor: pointer;
+  transition: color 0.15s;
+  font-family: var(--font);
+}
+.note-btn:hover { color: #1a3fa0; }
+.note-btn.note-btn-has-note { color: var(--green); }
+.note-btn.note-btn-has-note:hover { color: #0d8c36; }
+.note-icon { width: 13px; height: 13px; flex-shrink: 0; }
+.note-expand { margin-top: 6px; }
+.note-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: var(--font);
+  resize: vertical;
+  min-height: 52px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  background: #fff;
+}
+.note-textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0,120,172,0.1);
+}
+@media (max-width: 640px) {
+  .note-zone { padding-left: 16px; padding-right: 16px; }
 }

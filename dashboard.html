@@ -3,27 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — JMC Portal</title>
+  <title>JMC Domino's</title>
+  <link rel="icon" type="image/png" href="logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="portal.css?v=3">
+  <link rel="stylesheet" href="portal.css?v=7">
+  <script src="portal-theme.js"></script>
 </head>
 <body>
 
   <!-- PORTAL HEADER -->
   <header class="portal-header">
+    <!-- Row 1: brand + desktop controls / mobile: brand + toggle only -->
     <div class="portal-header-inner">
       <a class="portal-brand" href="#" onclick="clearSession(); window.location.href='index.html'; return false;">
         <img src="logo.png" alt="JMC">
       </a>
+      <!-- Desktop user area -->
       <div class="portal-user">
         <div class="portal-user-info">
           <span class="welcome-text" id="welcomeText"></span>
           <span class="role-badge" id="roleBadge"></span>
         </div>
+        <button class="btn-dark-toggle" title="Toggle theme" onclick="toggleDarkMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" data-theme-icon>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
         <button class="btn-logout" onclick="logout()">Sign Out</button>
       </div>
+      <!-- Mobile: theme toggle only in row 1 -->
+      <button class="btn-dark-toggle portal-toggle-mobile" title="Toggle theme" onclick="toggleDarkMode()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" data-theme-icon>
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+    <!-- Row 2: mobile only — greeting + role badge + sign out -->
+    <div class="portal-header-row2">
+      <div class="portal-row2-user">
+        <span class="mobile-welcome" id="mobileWelcome"></span>
+        <span class="role-badge" id="roleBadgeMobile"></span>
+      </div>
+      <button class="btn-signout-mobile" onclick="logout()">Sign out</button>
     </div>
   </header>
 
@@ -88,10 +111,17 @@
     if (!session) { /* redirected */ }
 
     // --- Header ---
-    document.getElementById('welcomeText').textContent = 'Welcome, ' + (session.displayName || session.username) + '!';
+    const displayName = session.displayName || session.username;
+    document.getElementById('welcomeText').textContent = 'Welcome, ' + displayName + '!';
+    // Mobile greeting: first name only
+    const firstName = displayName.split(' ')[0];
+    document.getElementById('mobileWelcome').textContent = 'Hi, ' + firstName;
     const badge = document.getElementById('roleBadge');
     badge.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
     badge.className = 'role-badge ' + session.role;
+    const badgeMobile = document.getElementById('roleBadgeMobile');
+    badgeMobile.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
+    badgeMobile.className = 'role-badge ' + session.role;
 
     // --- Helpers ---
     function formatDate(iso) {
@@ -115,11 +145,11 @@
       }
       tbody.innerHTML = mine.map(function (s) {
         return '<tr>' +
-          '<td>' + formatDate(s.dateSubmitted) + '</td>' +
-          '<td><span class="badge-store">' + (s.storeNumber || '—') + '</span></td>' +
-          '<td>' + (s.storeName || '—') + '</td>' +
-          '<td>' + (s.preparedBy || '—') + '</td>' +
-          '<td style="font-size:0.8rem;color:var(--text-light);">' + shortId(s.id) + '</td>' +
+          '<td data-label="Date">' + formatDate(s.dateSubmitted) + '</td>' +
+          '<td data-label="Store #"><span class="badge-store">' + (s.storeNumber || '—') + '</span></td>' +
+          '<td data-label="Store Name">' + (s.storeName || '—') + '</td>' +
+          '<td data-label="Prepared By">' + (s.preparedBy || '—') + '</td>' +
+          '<td data-label="ID" style="font-size:0.8rem;color:var(--text-light);">' + shortId(s.id) + '</td>' +
           '</tr>';
       }).join('');
     }
@@ -186,6 +216,8 @@
 
     // --- Init ---
     renderMyTable();
+
+    // Dark mode is managed by portal-theme.js (loaded in <head>)
 
   </script>
 </body>

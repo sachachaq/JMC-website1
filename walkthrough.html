@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Store Walkthrough — JMC Portal</title>
-  <link rel="stylesheet" href="portal.css">
+  <title>JMC Domino's</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="portal.css?v=6">
+  <script src="portal-theme.js"></script>
 </head>
 <body>
 
@@ -19,6 +21,11 @@
           <span class="welcome-text" id="welcomeText"></span>
           <span class="role-badge" id="roleBadge"></span>
         </div>
+        <button class="btn-dark-toggle" title="Toggle theme" onclick="toggleDarkMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" data-theme-icon>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
         <button class="btn-logout" onclick="logout()">Sign Out</button>
       </div>
     </div>
@@ -122,6 +129,72 @@
     // --- Answers map: questionId -> 'Yes'|'No' ---
     const answers = {};
 
+    // --- Question notes map: questionId -> string ---
+    const questionNotes = {};
+
+    // --- Note zone ---
+    function _syncNoteBtnLabel(qid) {
+      const btn = document.getElementById('note-btn-' + qid);
+      if (!btn) return;
+      const val = questionNotes[qid] || '';
+      btn.querySelector('.note-btn-label').textContent = val.trim() ? 'Note added' : 'Add Note';
+      btn.classList.toggle('note-btn-has-note', !!val.trim());
+    }
+
+    function createNoteZone(qid) {
+      const zone = document.createElement('div');
+      zone.className = 'note-zone';
+      zone.id = 'note-zone-' + qid;
+
+      const btnRow = document.createElement('div');
+      btnRow.className = 'note-btn-row';
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'note-btn';
+      btn.id = 'note-btn-' + qid;
+      btn.innerHTML =
+        '<svg class="note-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M12 20h9"/>' +
+          '<path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>' +
+        '</svg>' +
+        '<span class="note-btn-label">Add Note</span>';
+
+      const expand = document.createElement('div');
+      expand.className = 'note-expand';
+      expand.id = 'note-expand-' + qid;
+      expand.style.display = 'none';
+
+      const ta = document.createElement('textarea');
+      ta.className = 'note-textarea';
+      ta.id = 'note-ta-' + qid;
+      ta.placeholder = 'Add a note for this item\u2026';
+      ta.rows = 2;
+
+      ta.addEventListener('input', function () {
+        questionNotes[qid] = ta.value;
+        _syncNoteBtnLabel(qid);
+      });
+
+      btn.addEventListener('click', function () {
+        const isOpen = expand.style.display !== 'none';
+        if (isOpen && !ta.value.trim()) {
+          expand.style.display = 'none';
+          zone.classList.remove('note-zone-open');
+        } else {
+          expand.style.display = 'block';
+          zone.classList.add('note-zone-open');
+          ta.focus();
+        }
+      });
+
+      expand.appendChild(ta);
+      btnRow.appendChild(btn);
+      zone.appendChild(btnRow);
+      zone.appendChild(expand);
+      return zone;
+    }
+
     // --- Populate store dropdown ---
     (function () {
       const sel = document.getElementById('storeNumber');
@@ -195,6 +268,7 @@
           row.appendChild(toggleGroup);
           card.appendChild(row);
           card.appendChild(createUploadZone(q.id));
+          card.appendChild(createNoteZone(q.id));
         });
 
         container.appendChild(card);
@@ -331,7 +405,8 @@
         preparedBy:    preparedBy,
         notes:         document.getElementById('notesText').value.trim(),
         answers:       Object.assign({}, answers),
-        images:        ImageStore.all()
+        images:        ImageStore.all(),
+        questionNotes: Object.assign({}, questionNotes)
       };
 
       saveSubmission(submission);
@@ -357,6 +432,9 @@
     document.getElementById('newWalkthroughBtn').addEventListener('click', function () {
       window.location.reload();
     });
+
+    // Dark mode is managed by portal-theme.js (loaded in <head>)
+
   </script>
 </body>
 </html>

@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Operations Assessment 2026 — JMC Portal</title>
-  <link rel="stylesheet" href="portal.css">
+  <title>JMC Domino's</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="portal.css?v=6">
+  <script src="portal-theme.js"></script>
   <style>
     /* Product sub-question block */
     .oa-sub-block {
@@ -160,6 +162,18 @@
       border-color: var(--green) !important;
       color: var(--green) !important;
     }
+
+    /* ===== OA MOBILE RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .oa-score-card { padding: 14px 14px 12px; }
+      .oa-score-top  { gap: 8px; flex-wrap: wrap; }
+      .oa-score-number { font-size: 1.7rem; }
+      .oa-score-chips  { gap: 4px; }
+      .oa-score-chip   { font-size: 0.65rem; padding: 3px 7px; }
+      .oa-sub-block .wt-question-row { padding-left: 14px; }
+      .oa-item-label { padding: 6px 14px 4px; }
+      .oa-wide-btn   { width: 68px !important; font-size: 0.78rem !important; }
+    }
   </style>
 </head>
 <body>
@@ -175,6 +189,11 @@
           <span class="welcome-text" id="welcomeText"></span>
           <span class="role-badge" id="roleBadge"></span>
         </div>
+        <button class="btn-dark-toggle" title="Toggle theme" onclick="toggleDarkMode()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" data-theme-icon>
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
         <button class="btn-logout" onclick="logout()">Sign Out</button>
       </div>
     </div>
