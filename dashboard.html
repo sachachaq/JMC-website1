@@ -121,6 +121,8 @@
 
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="supabase-client.js"></script>
   <script src="transitions.js"></script>
   <script src="auth.js"></script>
   <script src="walkthrough-data.js"></script>
@@ -152,11 +154,18 @@
       return id ? id.split('-').pop() : '—';
     }
 
+    // Cache of fetched submissions for CSV export
+    var _submissionsCache = [];
+
     // --- Render My Submissions ---
-    function renderMyTable() {
-      const all  = getSubmissions();
-      const mine = all.filter(s => s.username === session.username).slice(0, 5);
+    async function renderMyTable() {
       const tbody = document.getElementById('myTableBody');
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Loading…</td></tr>';
+
+      const all = await getSubmissionsFromCloud(session.username);
+      _submissionsCache = all;
+      const mine = all.slice(0, 5);
+
       if (mine.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No submissions yet. Complete your first walkthrough!</td></tr>';
         return;
@@ -183,7 +192,7 @@
     }
 
     document.getElementById('exportBtn').addEventListener('click', function () {
-      const submissions = getSubmissions();
+      const submissions = _submissionsCache.length ? _submissionsCache : getSubmissions();
       if (submissions.length === 0) {
         alert('No submissions to export yet.');
         return;

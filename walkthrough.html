@@ -343,7 +343,7 @@
     }
 
     // --- Submit ---
-    document.getElementById('submitBtn').addEventListener('click', function () {
+    document.getElementById('submitBtn').addEventListener('click', async function () {
       const storeNumber = document.getElementById('storeNumber').value;
       const storeName   = document.getElementById('storeName').value;
       const conductedOn = document.getElementById('conductedOn').value;
@@ -411,7 +411,20 @@
         questionNotes: Object.assign({}, questionNotes)
       };
 
-      saveSubmission(submission);
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving…';
+
+      const result = await saveSubmission(submission);
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Walkthrough';
+
+      if (!result.ok) {
+        errorEl.textContent = 'Could not save to server. Your data is cached locally — please try again.';
+        errorEl.classList.add('show');
+        return;
+      }
 
       // Show success overlay
       const noCount  = ALL_QUESTION_IDS.filter(id => answers[id] === 'No').length;

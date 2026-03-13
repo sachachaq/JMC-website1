@@ -36,6 +36,8 @@ function logout() {
 }
 
 // --- Submissions ---
+
+// localStorage cache (offline fallback only)
 function getSubmissions() {
   try {
     const raw = localStorage.getItem(SUBMISSIONS_KEY);
@@ -45,34 +47,77 @@ function getSubmissions() {
   }
 }
 
-function saveSubmission(submission) {
-  // Save to localStorage (primary / offline)
+function _cacheSubmission(submission) {
   const submissions = getSubmissions();
-  submissions.unshift(submission); // newest first
+  submissions.unshift(submission);
   localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(submissions));
+}
 
-  // Save to Supabase (cloud backup — fire and forget)
+// Primary save: Supabase first, localStorage as offline cache
+async function saveSubmission(submission) {
+  const row = {
+    id:             submission.id,
+    username:       submission.username,
+    date_submitted: submission.dateSubmitted,
+    store_number:   submission.storeNumber,
+    store_name:     submission.storeName,
+    conducted_on:   submission.conductedOn,
+    prepared_by:    submission.preparedBy,
+    notes:          submission.notes,
+    answers:        submission.answers,
+    question_notes: submission.questionNotes,
+    images:         submission.images
+  };
+
   if (typeof supabaseClient !== 'undefined') {
-    supabaseClient.from('inspections').insert({
-      id:             submission.id,
-      username:       submission.username,
-      date_submitted: submission.dateSubmitted,
-      store_number:   submission.storeNumber,
-      store_name:     submission.storeName,
-      conducted_on:   submission.conductedOn,
-      prepared_by:    submission.preparedBy,
-      notes:          submission.notes,
-      answers:        submission.answers,
-      question_notes: submission.questionNotes,
-      images:         submission.images
-    }).then(function(result) {
-      if (result.error) {
-        console.error('[Supabase] Save error:', result.error.message);
-      } else {
-        console.log('[Supabase] Inspection saved:', submission.id);
-      }
-    });
+    const { error } = await supabaseClient.from('inspections').insert(row);
+    if (error) {
+      console.error('[Supabase] Save error:', error.message);
+      _cacheSubmission(submission); // offline fallback
+      return { ok: false, error: error.message };
+    }
+    console.log('[Supabase] Inspection saved:', submission.id);
+    _cacheSubmission(submission); // keep local cache in sync
+    return { ok: true, error: null };
   }
+
+  // No Supabase available — localStorage only
+  _cacheSubmission(submission);
+  return { ok: true, error: null };
+}
+
+// Primary read: Supabase first, localStorage fallback
+async function getSubmissionsFromCloud(username) {
+  if (typeof supabaseClient === 'undefined') return getSubmissions();
+
+  let query = supabaseClient
+    .from('inspections')
+    .select('*')
+    .order('date_submitted', { ascending: false });
+
+  if (username) query = query.eq('username', username);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error('[Supabase] Fetch error:', error.message);
+    return getSubmissions(); // fallback
+  }
+
+  return (data || []).map(function (r) {
+    return {
+      id:            r.id,
+      username:      r.username,
+      dateSubmitted: r.date_submitted,
+      storeNumber:   r.store_number,
+      storeName:     r.store_name,
+      conductedOn:   r.conducted_on,
+      preparedBy:    r.prepared_by,
+      notes:         r.notes,
+      answers:       r.answers,
+      questionNotes: r.question_notes,
+      images:        r.images
+    };
+  });
 }
 
 function generateId() {
