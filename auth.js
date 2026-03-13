@@ -55,6 +55,8 @@ function _cacheSubmission(submission) {
 
 // Primary save: Supabase first, localStorage as offline cache
 async function saveSubmission(submission) {
+  // Images are base64 dataUrls — kept in localStorage only to avoid
+  // exceeding Supabase's HTTP payload limit (~1 MB).
   const row = {
     id:             submission.id,
     username:       submission.username,
@@ -65,24 +67,34 @@ async function saveSubmission(submission) {
     prepared_by:    submission.preparedBy,
     notes:          submission.notes,
     answers:        submission.answers,
-    question_notes: submission.questionNotes,
-    images:         submission.images
+    question_notes: submission.questionNotes
   };
 
-  if (typeof supabaseClient !== 'undefined') {
-    const { error } = await supabaseClient.from('inspections').insert(row);
-    if (error) {
-      console.error('[Supabase] Save error:', error.message);
-      _cacheSubmission(submission); // offline fallback
-      return { ok: false, error: error.message };
-    }
-    console.log('[Supabase] Inspection saved:', submission.id);
-    _cacheSubmission(submission); // keep local cache in sync
+  // Always cache locally first (includes images)
+  _cacheSubmission(submission);
+
+  if (typeof supabaseClient === 'undefined') {
+    console.warn('[Supabase] Client not available — saved to localStorage only.');
     return { ok: true, error: null };
   }
 
-  // No Supabase available — localStorage only
-  _cacheSubmission(submission);
+  console.log('[Supabase] Attempting insert for submission:', submission.id);
+  console.log('[Supabase] Row being sent:', JSON.stringify(row).slice(0, 300) + '…');
+
+  const { data, error } = await supabaseClient
+    .from('inspections')
+    .insert([row]);
+
+  if (error) {
+    console.error('[Supabase] Insert FAILED:', error);
+    console.error('[Supabase] Error code:', error.code);
+    console.error('[Supabase] Error message:', error.message);
+    console.error('[Supabase] Error details:', error.details);
+    console.error('[Supabase] Error hint:', error.hint);
+    return { ok: false, error: error.message };
+  }
+
+  console.log('[Supabase] Insert SUCCESS. Response:', data);
   return { ok: true, error: null };
 }
 
