@@ -631,10 +631,12 @@
         await deleteDraft(id);
         loadDrafts();
       } else {
-        await deleteSubmission(id);
+        const result = await deleteSubmission(id);
+        console.log('[Delete] deleteSubmission result:', result, 'id:', id);
         const card = document.querySelector('.sub-card[data-id="' + id + '"]');
         if (card) card.remove();
-        loadRecent();
+        await loadRecent();
+        console.log('[Delete] Recent Submissions re-rendered');
       }
     }
 
