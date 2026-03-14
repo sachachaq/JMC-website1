@@ -360,7 +360,9 @@ async function deleteSubmission(id) {
   if (typeof supabaseClient === 'undefined') return { ok: true };
   try {
     const { error } = await supabaseClient
-      .from('inspections').delete().eq('id', id).eq('status', 'submitted');
+      .from('inspections').delete()
+      .eq('id', id)
+      .or('status.eq.submitted,status.is.null');
     if (error) console.warn('[Delete] Error:', error.message);
     return { ok: !error };
   } catch (e) { return { ok: false }; }
