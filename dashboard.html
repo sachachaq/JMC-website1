@@ -404,6 +404,11 @@
     }
 
     // ---- Resume URL builder ----
+    const TEMPLATE_TOTAL_QS = {
+      'Walkthrough':           typeof ALL_QUESTION_IDS !== 'undefined' ? ALL_QUESTION_IDS.length : 35,
+      'Operations Assessment': 52   // OA_BASE_IDS.length
+    };
+
     const TEMPLATE_PAGES = {
       'Walkthrough':           'walkthrough.html',
       'Operations Assessment': 'operations-assessment.html',
@@ -492,7 +497,7 @@
         const menuId  = 'menu-d-' + d.id;
 
         const answered = Object.keys(d.answers || {}).filter(function (k) { return !!d.answers[k]; }).length;
-        const total    = (type === 'Walkthrough') ? ALL_QUESTION_IDS.length : 35;
+        const total    = TEMPLATE_TOTAL_QS[type] || 35;
         const pct      = total > 0 ? Math.round(answered / total * 100) : 0;
 
         let dateStr = '\u2014';
@@ -540,7 +545,12 @@
     }
 
     async function loadDrafts() {
-      const drafts = await getDraftsFromCloud(session.username);
+      let drafts = [];
+      try {
+        drafts = await getDraftsFromCloud(session.username);
+      } catch (e) {
+        console.error('[Dashboard] loadDrafts failed:', e.message);
+      }
       _draftsCache = drafts;
       const card = document.getElementById('inProgressCard');
       if (drafts.length) {

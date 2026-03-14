@@ -299,32 +299,37 @@ async function getDraftsFromCloud(username) {
 
   if (typeof supabaseClient === 'undefined') return localDrafts;
 
-  const { data, error } = await supabaseClient
-    .from('inspections')
-    .select('id, username, inspection_type, store_number, store_name, conducted_on, prepared_by, answers, last_modified, status')
-    .eq('username', username)
-    .eq('status', 'draft')
-    .order('last_modified', { ascending: false });
+  let cloudOnly = [];
+  try {
+    const { data, error } = await supabaseClient
+      .from('inspections')
+      .select('id, username, inspection_type, store_number, store_name, conducted_on, prepared_by, answers, last_modified, status')
+      .eq('username', username)
+      .eq('status', 'draft')
+      .order('last_modified', { ascending: false });
 
-  if (error) {
-    console.error('[Draft] Fetch error:', error.message);
-    return localDrafts;
+    if (error) {
+      console.error('[Draft] Fetch error:', error.message);
+    } else {
+      // Add cloud-only drafts (not already present in localStorage)
+      cloudOnly = (data || [])
+        .filter(r => !localIds.has(r.id))
+        .map(r => ({
+          id:             r.id,
+          username:       r.username,
+          inspectionType: r.inspection_type || 'Walkthrough',
+          storeNumber:    r.store_number,
+          storeName:      r.store_name,
+          conductedOn:    r.conducted_on,
+          preparedBy:     r.prepared_by,
+          answers:        r.answers || {},
+          lastModified:   r.last_modified
+        }));
+    }
+  } catch (e) {
+    console.error('[Draft] Supabase exception:', e.message);
+    // localDrafts already has the localStorage results — fall through to merge
   }
-
-  // Add cloud-only drafts (not already present in localStorage)
-  const cloudOnly = (data || [])
-    .filter(r => !localIds.has(r.id))
-    .map(r => ({
-      id:             r.id,
-      username:       r.username,
-      inspectionType: r.inspection_type || 'Walkthrough',
-      storeNumber:    r.store_number,
-      storeName:      r.store_name,
-      conductedOn:    r.conducted_on,
-      preparedBy:     r.prepared_by,
-      answers:        r.answers || {},
-      lastModified:   r.last_modified
-    }));
 
   // Merge and sort by most recently modified
   const merged = localDrafts.concat(cloudOnly);

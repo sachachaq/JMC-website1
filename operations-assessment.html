@@ -175,6 +175,7 @@
       .oa-wide-btn   { width: 68px !important; font-size: 0.78rem !important; }
     }
   </style>
+  <script src="portal-theme.js"></script>
 </head>
 <body>
 
@@ -267,6 +268,7 @@
     <!-- SUBMIT -->
     <div class="wt-submit-area">
       <button type="button" class="btn-submit-wt" id="submitBtn">Submit Assessment</button>
+      <span id="draftIndicator" class="draft-indicator"></span>
       <p class="submit-error" id="submitError">Please complete all required fields and answer all visible questions before submitting.</p>
     </div>
 
@@ -290,6 +292,7 @@
   <script src="auth.js"></script>
   <script src="operations-assessment-data.js"></script>
   <script src="image-upload.js"></script>
+  <script src="inspection-engine.js"></script>
   <script>
 
     // --- Auth ---
@@ -299,8 +302,10 @@
     badge.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
     badge.className = 'role-badge ' + session.role;
 
-    // --- Answers map ---
-    var answers = {};
+    // --- Inspection Engine ---
+    var IE         = InspectionEngine;
+    var answers    = IE.answers;          // shared reference — mutate in-place
+    var _draftData = IE.init(OA_CONFIG, session);
 
     // --- Populate site dropdown ---
     (function () {
@@ -324,6 +329,10 @@
 
     // --- Pre-fill prepared by ---
     document.getElementById('preparedBy').value = session.displayName || session.username;
+
+    // --- Write draft to localStorage immediately so it shows in dashboard In Progress
+    //     even if the user navigates away before any interaction or beforeunload fires ---
+    IE.saveSync(getFormFields);
 
     // --- Render sections ---
     (function () {
@@ -488,6 +497,96 @@
       parent.appendChild(subBlock);
     }
 
+    // --- Form field snapshot for auto-save ---
+    function getFormFields() {
+      return {
+        storeNumber: document.getElementById('siteConducted').value,
+        storeName:   document.getElementById('location').value.trim(),
+        conductedOn: document.getElementById('conductedOn').value,
+        preparedBy:  document.getElementById('preparedBy').value.trim(),
+        notes:       document.getElementById('notesText').value.trim()
+      };
+    }
+
+    // --- Restore draft state ---
+    function _restoreDraft(draft) {
+      if (!draft || !draft.answers) return;
+
+      // Header fields
+      var siteEl = document.getElementById('siteConducted');
+      if (draft.storeNumber) siteEl.value = draft.storeNumber;
+      var locEl = document.getElementById('location');
+      if (draft.storeName !== undefined) locEl.value = draft.storeName || '';
+      var conEl = document.getElementById('conductedOn');
+      if (draft.conductedOn) conEl.value = draft.conductedOn;
+      var notesEl = document.getElementById('notesText');
+      if (draft.notes) notesEl.value = draft.notes;
+
+      // Merge answers into IE.answers (shared reference)
+      Object.assign(IE.answers, draft.answers);
+
+      // Apply toggle UI state for each restored answer
+      Object.keys(draft.answers).forEach(function (qid) {
+        var val   = draft.answers[qid];
+        var group = document.getElementById('toggle-' + qid);
+        if (!group) return;
+
+        group.querySelectorAll('.wt-toggle-btn').forEach(function (b) {
+          b.classList.remove('yes-active', 'no-active');
+        });
+        var btn = group.querySelector('[data-val="' + val + '"]');
+        if (btn) {
+          btn.classList.add((val === 'Yes' || val === 'Great') ? 'yes-active' : 'no-active');
+        }
+
+        var row = document.getElementById('row-' + qid);
+        if (row) {
+          var isPenalty = row.classList.contains('penalty-row');
+          row.classList.remove('answer-no');
+          if (isPenalty ? val === 'Yes' : val === 'No' || val === 'Remake') {
+            row.classList.add('answer-no');
+          }
+        }
+
+        var isProductSubQ = qid.indexOf('_') !== -1 && (qid.startsWith('pz') || qid.startsWith('sd'));
+        if (!isProductSubQ) {
+          var row2      = document.getElementById('row-' + qid);
+          var isPenalty2 = row2 && row2.classList.contains('penalty-row');
+          var uploadState = 'default';
+          if (val === 'Remake')                  uploadState = 'required';
+          else if (isPenalty2 && val === 'Yes')  uploadState = 'required';
+          else if (!isPenalty2 && val === 'No')  uploadState = 'encouraged';
+          setUploadZoneState(qid, uploadState);
+        }
+      });
+
+      // Show sub-blocks for Remake items
+      for (var pi = 1; pi <= 7; pi++) {
+        if (draft.answers['pz' + pi] === 'Remake') {
+          var sb = document.getElementById('sub-pz' + pi);
+          if (sb) sb.classList.add('show');
+        }
+      }
+      for (var si = 1; si <= 3; si++) {
+        if (draft.answers['sd' + si] === 'Remake') {
+          var sb2 = document.getElementById('sub-sd' + si);
+          if (sb2) sb2.classList.add('show');
+        }
+      }
+
+      // Restore images
+      if (draft.images && typeof ImageStore !== 'undefined' && typeof restoreImageToZone === 'function') {
+        Object.keys(draft.images).forEach(function (qid) {
+          var imgs = draft.images[qid];
+          if (!imgs || !imgs.length) return;
+          imgs.forEach(function (img) { ImageStore.add(qid, img); });
+          restoreImageToZone(qid, imgs);
+        });
+      }
+
+      updateScore();
+    }
+
     // --- Toggle click handler ---
     document.addEventListener('click', function (e) {
       var btn = e.target.closest('.wt-toggle-btn');
@@ -566,7 +665,17 @@
       if (!isProductSubQ) {
         updateScore();
       }
+      IE.scheduleSave(getFormFields);
     });
+
+    // --- Auto-save on header field changes ---
+    ['siteConducted', 'conductedOn', 'location', 'notesText'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', function () { IE.scheduleSave(getFormFields); });
+    });
+
+    // --- Sync save on page unload ---
+    window.addEventListener('beforeunload', function () { IE.saveSync(getFormFields); });
 
     // --- Scoring ---
     var OA_CHIP_DEFS = [
@@ -589,6 +698,9 @@
         container.appendChild(chip);
       });
     })();
+
+    // --- Restore draft (after DOM + score chips are ready) ---
+    _restoreDraft(_draftData);
 
     function getScoreColor(pct) {
       if (pct >= 80) return 'green';
@@ -711,7 +823,7 @@
     }
 
     // --- Submit ---
-    document.getElementById('submitBtn').addEventListener('click', function () {
+    document.getElementById('submitBtn').addEventListener('click', async function () {
       var site        = document.getElementById('siteConducted').value;
       var conductedOn = document.getElementById('conductedOn').value;
       var errorEl     = document.getElementById('submitError');
@@ -752,24 +864,44 @@
 
       errorEl.classList.remove('show');
 
+      var submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting\u2026';
+
       // Build submission
       var submission = {
-        id:            generateId(),
-        type:          'operations-assessment',
-        username:      session.username,
-        displayName:   session.displayName || session.username,
-        dateSubmitted: new Date().toISOString(),
-        site:          site,
-        location:      document.getElementById('location').value.trim(),
-        conductedOn:   conductedOn,
-        preparedBy:    document.getElementById('preparedBy').value.trim(),
-        notes:         document.getElementById('notesText').value.trim(),
-        answers:       Object.assign({}, answers),
-        images:        ImageStore.all(),
-        score:         calculateScore().total
+        id:             IE.draftId,
+        inspectionType: OA_CONFIG.templateName,
+        username:       session.username,
+        displayName:    session.displayName || session.username,
+        dateSubmitted:  new Date().toISOString(),
+        storeNumber:    site,
+        storeName:      document.getElementById('location').value.trim(),
+        conductedOn:    conductedOn,
+        preparedBy:     document.getElementById('preparedBy').value.trim(),
+        notes:          document.getElementById('notesText').value.trim(),
+        answers:        Object.assign({}, answers),
+        images:         ImageStore.all(),
+        score:          calculateScore().total
       };
 
-      saveSubmission(submission);
+      var result;
+      try {
+        IE.clearDraft();
+        result = await saveSubmission(submission, function (msg) { submitBtn.textContent = msg; });
+      } catch (e) {
+        console.error('[Submit] Unexpected error:', e);
+        result = { localOk: false, cloudOk: false, error: e.message || 'Unknown error' };
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Assessment';
+      }
+
+      if (!result.localOk && !result.cloudOk) {
+        errorEl.textContent = result.error || 'Submission failed. Please try again.';
+        errorEl.classList.add('show');
+        return;
+      }
 
       // Build success meta
       var finalScore = calculateScore();
@@ -779,13 +911,12 @@
       var scoreLabel = pct >= 80 ? 'Passing' : pct >= 60 ? 'Needs Work' : 'At Risk';
 
       var remakeCount  = 0;
-      for (var i = 1; i <= 7; i++) { if (answers['pz' + i] === 'Remake') remakeCount++; }
+      for (var ri = 1; ri <= 7; ri++) { if (answers['pz' + ri] === 'Remake') remakeCount++; }
       var greatCount   = 7 - remakeCount;
       var penaltyCount = finalScore.sections['coe'] ? finalScore.sections['coe'].earned : 0;
 
       document.getElementById('successMeta').innerHTML =
-        '<div class="success-meta-row"><span>Final Score</span><span style="color:' + scoreColorHex + ';font-weight:800;font-size:1.1rem;">' + totalPts + ' / 100 — ' + scoreLabel + '</span></div>' +
-        '<div class="success-meta-row"><span>Submission ID</span><span>' + submission.id.split('-').pop() + '</span></div>' +
+        '<div class="success-meta-row"><span>Final Score</span><span style="color:' + scoreColorHex + ';font-weight:800;font-size:1.1rem;">' + totalPts + ' / 100 \u2014 ' + scoreLabel + '</span></div>' +
         '<div class="success-meta-row"><span>Site</span><span>' + site + '</span></div>' +
         '<div class="success-meta-row"><span>Submitted</span><span>' + new Date(submission.dateSubmitted).toLocaleString() + '</span></div>' +
         '<div class="success-meta-row"><span>Pizzas Great</span><span style="color:var(--green);font-weight:700;">' + greatCount + ' / 7</span></div>' +
@@ -793,13 +924,14 @@
           ? '<div class="success-meta-row"><span>Pizzas Remake</span><span style="color:var(--red);font-weight:700;">' + remakeCount + '</span></div>'
           : '') +
         (penaltyCount > 0
-          ? '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--red);font-weight:700;">' + penaltyCount + ' (−' + (penaltyCount * 10) + ' pts)</span></div>'
+          ? '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--red);font-weight:700;">' + penaltyCount + ' (\u2212' + (penaltyCount * 10) + ' pts)</span></div>'
           : '<div class="success-meta-row"><span>Penalty Flags</span><span style="color:var(--green);font-weight:700;">None</span></div>') +
         (ImageStore.totalCount() > 0
           ? '<div class="success-meta-row"><span>Photos Attached</span><span style="color:#1a3fa0;font-weight:700;">' + ImageStore.totalCount() + '</span></div>'
           : '');
 
       document.getElementById('successOverlay').classList.add('show');
+      setTimeout(function () { window.location.href = 'dashboard.html'; }, 2500);
     });
 
     document.getElementById('newAssessmentBtn').addEventListener('click', function () {

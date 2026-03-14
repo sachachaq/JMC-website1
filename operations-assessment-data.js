@@ -168,3 +168,18 @@ function getOAVisibleIds(answers) {
   }
   return ids;
 }
+
+// InspectionEngine config for Operations Assessment
+const OA_CONFIG = {
+  templateId:     'operations-assessment',
+  templateName:   'Operations Assessment',
+  idPrefix:       'OA',
+  allQuestionIds: OA_BASE_IDS,
+  scoring: {
+    passThreshold: 80,
+    warnThreshold: 60,
+    passLabel: 'Passing',
+    warnLabel: 'Needs Work',
+    failLabel: 'At Risk'
+  }
+};
