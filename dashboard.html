@@ -632,6 +632,8 @@
         loadDrafts();
       } else {
         await deleteSubmission(id);
+        const card = document.querySelector('.sub-card[data-id="' + id + '"]');
+        if (card) card.remove();
         loadRecent();
       }
     }
