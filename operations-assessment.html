@@ -299,13 +299,12 @@
     var session = requireAuth();
     document.getElementById('welcomeText').textContent = 'Welcome, ' + (session.displayName || session.username) + '!';
     var badge = document.getElementById('roleBadge');
-    badge.textContent = session.role === 'mastermind' ? 'The Mastermind' : session.role === 'admin' ? 'Admin' : 'Supervisor';
+    badge.textContent = getRoleLabel(session.role);
     badge.className = 'role-badge ' + session.role;
 
     // --- Inspection Engine ---
-    var IE         = InspectionEngine;
-    var answers    = IE.answers;          // shared reference — mutate in-place
-    var _draftData = IE.init(OA_CONFIG, session);
+    var IE      = InspectionEngine;
+    var answers = IE.answers;          // shared reference — mutate in-place
 
     // --- Populate site dropdown ---
     (function () {
@@ -329,10 +328,6 @@
 
     // --- Pre-fill prepared by ---
     document.getElementById('preparedBy').value = session.displayName || session.username;
-
-    // --- Write draft to localStorage immediately so it shows in dashboard In Progress
-    //     even if the user navigates away before any interaction or beforeunload fires ---
-    IE.saveSync(getFormFields);
 
     // --- Render sections ---
     (function () {
@@ -699,8 +694,9 @@
       });
     })();
 
-    // --- Restore draft (after DOM + score chips are ready) ---
-    _restoreDraft(_draftData);
+    // --- Init engine (after DOM + score chips are ready — mirrors walkthrough pattern) ---
+    var _draftData = IE.init(OA_CONFIG, session);
+    if (_draftData) { _restoreDraft(_draftData); }
 
     function getScoreColor(pct) {
       if (pct >= 80) return 'green';
@@ -935,7 +931,7 @@
     });
 
     document.getElementById('newAssessmentBtn').addEventListener('click', function () {
-      window.location.reload();
+      window.location.href = 'operations-assessment.html';
     });
 
   </script>
