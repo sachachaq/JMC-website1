@@ -383,6 +383,92 @@ html[data-theme="dark"] .penalty-row .wt-toggle-btn.no-active {
 html[data-theme="dark"] .btn-dark-toggle { color: #fbbf24; opacity: 0.55; }
 html[data-theme="dark"] .btn-dark-toggle:hover { opacity: 1; background: rgba(255,255,255,0.09); }
 
+/* ===== REPORT MODAL — DARK MODE ===== */
+/* Modal surface */
+html[data-theme="dark"] .sub-overlay  { background: rgba(0,0,0,0.65); }
+html[data-theme="dark"] .sub-modal    { background: var(--bg-card); box-shadow: 0 12px 48px rgba(0,0,0,0.55); }
+html[data-theme="dark"] .sub-modal-hdr {
+  background: var(--bg-card);
+  border-bottom-color: var(--border);
+}
+/* Header text */
+html[data-theme="dark"] .sub-modal-hdr h2 { color: var(--text); }
+html[data-theme="dark"] .sub-modal-sub    { color: var(--text-light); }
+html[data-theme="dark"] .sub-modal-close  { color: var(--text-light); }
+html[data-theme="dark"] .sub-modal-close:hover { color: var(--text); }
+/* PDF download button — invert to stay legible on dark card */
+html[data-theme="dark"] .sub-pdf-btn {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+html[data-theme="dark"] .sub-pdf-btn:hover { background: #f1f5f9; }
+/* Score bar */
+html[data-theme="dark"] .sub-score-track  { background: var(--border); }
+html[data-theme="dark"] .sub-score-pct    { color: var(--text); }
+/* Meta grid */
+html[data-theme="dark"] .sub-meta-label   { color: var(--text-light); }
+html[data-theme="dark"] .sub-meta-item    { color: var(--text); }
+/* Section headers & dividers */
+html[data-theme="dark"] .sub-section-hdr  { color: var(--text-light); }
+html[data-theme="dark"] .sub-q-row {
+  border-bottom-color: var(--border);
+  color: var(--text);
+}
+html[data-theme="dark"] .sub-q-text { color: var(--text); }
+html[data-theme="dark"] .sub-q-note { color: var(--text-light); }
+/* Answer pills — keep vivid but softer on dark */
+html[data-theme="dark"] .sub-badge.yes { background: #052e16; color: #4ade80; }
+html[data-theme="dark"] .sub-badge.no  { background: #2d1515; color: #f87171; }
+html[data-theme="dark"] .sub-badge.na  { background: var(--border); color: var(--text-light); }
+/* Overall notes section */
+html[data-theme="dark"] .sub-notes-section { border-top-color: var(--border); }
+html[data-theme="dark"] .sub-notes-label   { color: var(--text-light); }
+html[data-theme="dark"] .sub-notes-text    { color: var(--text); }
+
+/* ===== DELETE MODAL & CARD MENU — DARK MODE ===== */
+html[data-theme="dark"] .del-modal {
+  background: var(--bg-card);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+}
+html[data-theme="dark"] .del-modal h3     { color: var(--text); }
+html[data-theme="dark"] .del-modal-desc   { color: var(--text-light); }
+html[data-theme="dark"] .btn-del-cancel {
+  border-color: var(--border);
+  color: var(--text-mid);
+}
+html[data-theme="dark"] .btn-del-cancel:hover { background: #243044; }
+html[data-theme="dark"] .card-menu-drop {
+  background: var(--bg-card);
+  border-color: var(--border);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 2px 6px rgba(0,0,0,0.25);
+}
+html[data-theme="dark"] .card-menu-item {
+  color: var(--text-mid);
+}
+html[data-theme="dark"] .card-menu-item:hover { background: #243044; }
+html[data-theme="dark"] .card-menu-delete { color: #f87171; }
+html[data-theme="dark"] .card-menu-delete:hover { background: #2d1515; }
+/* Submission cards in dark mode */
+html[data-theme="dark"] .sub-card:hover  { background: #243044; }
+html[data-theme="dark"] .sub-card-store  { color: var(--text); }
+html[data-theme="dark"] .sub-card-meta   { color: var(--text-light); }
+html[data-theme="dark"] .sub-list-empty  { color: var(--text-light); }
+html[data-theme="dark"] .sub-list-footer a { color: #60a5fa; }
+html[data-theme="dark"] .sub-list-title  { color: var(--text); }
+html[data-theme="dark"] .btn-export-inline {
+  color: var(--text-light);
+  border-color: var(--border);
+}
+html[data-theme="dark"] .btn-export-inline:hover { color: var(--text); border-color: var(--text-light); }
+html[data-theme="dark"] .btn-resume {
+  color: #60a5fa;
+  background: #0c2d48;
+  border-color: #1e4976;
+}
+html[data-theme="dark"] .btn-resume:hover { background: #0e3d60; border-color: #2563eb; }
+html[data-theme="dark"] .card-menu-btn { color: var(--text-light); }
+html[data-theme="dark"] .card-menu-btn:hover { background: rgba(255,255,255,0.07); color: var(--text); }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {

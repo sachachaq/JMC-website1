@@ -278,17 +278,23 @@ async function saveDraft(draft) {
   }
 }
 
-// Fetch drafts for a user. Falls back to scanning localStorage.
+// Fetch drafts for a user.
+// Always scans localStorage first, then merges with Supabase cloud results.
+// This ensures drafts are visible even when cloud sync hasn't succeeded yet.
 async function getDraftsFromCloud(username) {
-  // Scan localStorage as fast offline fallback
+  // Always scan localStorage — this is the authoritative local source
   const localDrafts = [];
+  const localIds    = new Set();
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key || !key.startsWith(DRAFT_PREFIX)) continue;
     try {
       const d = JSON.parse(localStorage.getItem(key));
-      if (d && d.username === username) localDrafts.push(d);
-    } catch (e) { /* skip corrupt */ }
+      if (d && d.username === username && d.status !== 'submitted') {
+        localDrafts.push(d);
+        localIds.add(d.id);
+      }
+    } catch (e) { /* skip corrupt entries */ }
   }
 
   if (typeof supabaseClient === 'undefined') return localDrafts;
@@ -305,17 +311,29 @@ async function getDraftsFromCloud(username) {
     return localDrafts;
   }
 
-  return (data || []).map(r => ({
-    id:             r.id,
-    username:       r.username,
-    inspectionType: r.inspection_type || 'Walkthrough',
-    storeNumber:    r.store_number,
-    storeName:      r.store_name,
-    conductedOn:    r.conducted_on,
-    preparedBy:     r.prepared_by,
-    answers:        r.answers || {},
-    lastModified:   r.last_modified
-  }));
+  // Add cloud-only drafts (not already present in localStorage)
+  const cloudOnly = (data || [])
+    .filter(r => !localIds.has(r.id))
+    .map(r => ({
+      id:             r.id,
+      username:       r.username,
+      inspectionType: r.inspection_type || 'Walkthrough',
+      storeNumber:    r.store_number,
+      storeName:      r.store_name,
+      conductedOn:    r.conducted_on,
+      preparedBy:     r.prepared_by,
+      answers:        r.answers || {},
+      lastModified:   r.last_modified
+    }));
+
+  // Merge and sort by most recently modified
+  const merged = localDrafts.concat(cloudOnly);
+  merged.sort(function (a, b) {
+    var at = a.lastModified ? new Date(a.lastModified).getTime() : 0;
+    var bt = b.lastModified ? new Date(b.lastModified).getTime() : 0;
+    return bt - at;
+  });
+  return merged;
 }
 
 // Delete a draft. Safety guard: never deletes submitted rows.

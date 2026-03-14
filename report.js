@@ -124,8 +124,8 @@ async function openReportModal(s) {
   html += '<div class="sub-meta-grid">' +
     '<div class="sub-meta-item"><span class="sub-meta-label">Prepared By</span><span>' + (s.preparedBy || '\u2014') + '</span></div>' +
     '<div class="sub-meta-item"><span class="sub-meta-label">Submitted By</span><span>' + (s.username || '\u2014') + '</span></div>' +
+    '<div class="sub-meta-item"><span class="sub-meta-label">Date Submitted</span><span>' + formatDate(s.dateSubmitted) + '</span></div>' +
     '<div class="sub-meta-item"><span class="sub-meta-label">Conducted On</span><span>' + (s.conductedOn ? s.conductedOn.replace('T', '\u00a0') : '\u2014') + '</span></div>' +
-    '<div class="sub-meta-item"><span class="sub-meta-label">Submission ID</span><span style="font-size:.78rem">' + shortId(s.id) + '</span></div>' +
     '</div>';
 
   // Section-by-section questions with inline images
@@ -224,59 +224,70 @@ async function _buildPDF(s, btn) {
       y += lines.length * size * 1.35;
     }
 
-    // Header
+    // Header band — taller with room for title + date subtitle
     doc.setFillColor(26, 63, 160);
-    doc.rect(0, 0, PW, 52, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(255, 255, 255);
-    doc.text('JMC ' + inspectionType(s) + ' Report', ML, 34);
-    y = 68;
+    doc.rect(0, 0, PW, 78, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(255, 255, 255);
+    doc.text('JMC ' + inspectionType(s) + ' Report', ML, 44);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(160, 190, 240);
+    doc.text('Submitted ' + formatDate(s.dateSubmitted), ML, 62);
+    y = 104;
 
-    // Store title
-    txt('Store ' + (s.storeNumber || '\u2014'), 20, true, 15, 23, 42);
-    y += 4;
+    // Store number — prominent headline
+    txt('Store ' + (s.storeNumber || '\u2014'), 22, true, 15, 23, 42);
+    y += 14;
 
-    // Meta
+    // Thin rule below store title
+    doc.setDrawColor(218, 222, 232); doc.setLineWidth(0.5);
+    doc.line(ML, y, ML + CW, y);
+    y += 22;
+
+    // Meta grid — 4 items, 2 columns, no Submission ID
     const meta = [
       ['Prepared By',    s.preparedBy  || '\u2014'],
       ['Submitted By',   s.username    || '\u2014'],
       ['Date Submitted', formatDate(s.dateSubmitted)],
-      ['Conducted On',   s.conductedOn ? s.conductedOn.replace('T', ' ') : '\u2014'],
-      ['Submission ID',  shortId(s.id)]
+      ['Conducted On',   s.conductedOn ? s.conductedOn.replace('T', ' ') : '\u2014']
     ];
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     meta.forEach(function ([label, value], i) {
       const col = i % 2, row = Math.floor(i / 2);
-      const x = ML + col * (CW / 2 + 10), yy = y + row * 28;
-      check(28);
-      doc.setFont('helvetica', 'normal'); doc.setTextColor(130, 130, 130);
+      const x = ML + col * (CW / 2 + 10), yy = y + row * 34;
+      check(34);
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(118, 128, 150);
       doc.text(label.toUpperCase(), x, yy);
-      doc.setFont('helvetica', 'bold'); doc.setTextColor(25, 25, 25);
-      doc.text(value, x, yy + 14);
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 25, 42);
+      doc.text(value, x, yy + 15);
     });
-    y += Math.ceil(meta.length / 2) * 28 + 14;
+    y += Math.ceil(meta.length / 2) * 34 + 22;
 
-    // Score
+    // Thin rule above score
+    doc.setDrawColor(218, 222, 232); doc.setLineWidth(0.5);
+    doc.line(ML, y, ML + CW, y);
+    y += 16;
+
+    // Score band
     const sc  = calcScore(s);
     const sc3 = sc.pct >= 80 ? [22, 163, 74] : sc.pct >= 60 ? [217, 119, 6] : [220, 38, 38];
     check(38);
     doc.setFillColor(245, 247, 250);
-    doc.roundedRect(ML, y, CW, 30, 4, 4, 'F');
+    doc.roundedRect(ML, y, CW, 32, 4, 4, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
     doc.setTextColor(sc3[0], sc3[1], sc3[2]);
-    doc.text(sc.pct !== null ? sc.pct + '%' : '\u2014', ML + 10, y + 21);
+    doc.text(sc.pct !== null ? sc.pct + '%' : '\u2014', ML + 12, y + 22);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
     doc.setTextColor(80, 80, 80);
-    doc.text(sc.yes + ' Yes  \u00b7  ' + sc.no + ' No  \u00b7  ' + scoreLabel(sc.pct), ML + 54, y + 21);
-    y += 42;
+    doc.text(sc.yes + ' Yes  \u00b7  ' + sc.no + ' No  \u00b7  ' + scoreLabel(sc.pct), ML + 58, y + 22);
+    y += 50;
 
     // Sections
     for (const sec of FORM_SECTIONS) {
-      check(28); y += 6;
+      check(32); y += 12;
       doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
       doc.text(sec.title.toUpperCase(), ML, y);
-      doc.setDrawColor(220, 220, 220);
+      doc.setDrawColor(220, 220, 220); doc.setLineWidth(0.5);
       doc.line(ML + doc.getTextWidth(sec.title.toUpperCase()) + 6, y - 1, ML + CW, y - 1);
-      y += 8;
+      y += 10;
 
       for (const q of sec.questions) {
         const a    = s.answers ? (s.answers[q.id] || '\u2014') : '\u2014';

@@ -434,9 +434,10 @@
       const conductedOn = document.getElementById('conductedOn').value;
       const preparedBy  = document.getElementById('preparedBy').value.trim();
       const errorEl     = document.getElementById('submitError');
+      const submitBtn   = document.getElementById('submitBtn');
 
+      // --- Validation ---
       let valid = true;
-
       ['storeNumber', 'conductedOn', 'preparedBy'].forEach(function (fieldId) {
         const grp = document.getElementById('grp-' + fieldId);
         const el  = document.getElementById(fieldId);
@@ -444,7 +445,7 @@
         else { grp.classList.remove('error'); }
       });
 
-      const unanswered = ALL_QUESTION_IDS.filter(id => !answers[id]);
+      const unanswered = ALL_QUESTION_IDS.filter(function (id) { return !answers[id]; });
       if (unanswered.length > 0) {
         valid = false;
         ALL_QUESTION_IDS.forEach(function (id) {
@@ -467,6 +468,7 @@
 
       errorEl.classList.remove('show');
 
+      // --- Build submission object before any async work ---
       const submission = {
         id:             IE.draftId,
         username:       session.username,
@@ -482,7 +484,7 @@
         questionNotes:  Object.assign({}, questionNotes)
       };
 
-      const submitBtn = document.getElementById('submitBtn');
+      // --- Loading state ---
       submitBtn.disabled = true;
       submitBtn.textContent = 'Saving\u2026';
 
@@ -492,32 +494,33 @@
           submitBtn.textContent = status;
         });
       } catch (e) {
-        console.error('[Submit] Unhandled error:', e);
-        result = { localOk: true, cloudOk: false, error: e.message || 'Unknown error' };
+        // Unexpected exception (e.g. localStorage quota exceeded before Supabase call)
+        console.error('[Submit] Unexpected error:', e);
+        result = { localOk: false, cloudOk: false, error: e.message || 'Unknown error' };
       } finally {
+        // Always clear loading state regardless of outcome
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit Walkthrough';
       }
 
-      if (!result.localOk) {
+      // --- Handle save failure ---
+      if (!result || !result.localOk) {
         errorEl.textContent = 'Failed to save. Please try again.';
         errorEl.classList.add('show');
         return;
       }
 
-      // Clean up draft
+      // --- Success: clean up draft, show overlay, auto-redirect ---
       IE.clearDraft();
 
-      // Success overlay
-      const noCount  = ALL_QUESTION_IDS.filter(id => answers[id] === 'No').length;
-      const yesCount = ALL_QUESTION_IDS.filter(id => answers[id] === 'Yes').length;
+      const noCount  = ALL_QUESTION_IDS.filter(function (id) { return answers[id] === 'No'; }).length;
+      const yesCount = ALL_QUESTION_IDS.filter(function (id) { return answers[id] === 'Yes'; }).length;
 
       const cloudWarning = result.cloudOk ? '' :
         '<div class="success-meta-row" style="color:#b45309;font-size:0.8rem;border-top:1px solid var(--border,#e5e7eb);margin-top:0.5rem;padding-top:0.5rem;">' +
         '<span>&#9888; Cloud sync</span><span>Saved locally \u2014 will sync when reconnected</span></div>';
 
       document.getElementById('successMeta').innerHTML =
-        '<div class="success-meta-row"><span>Submission ID</span><span>' + submission.id.split('-').pop() + '</span></div>' +
         '<div class="success-meta-row"><span>Store</span><span>' + storeNumber + ' \u2014 ' + storeName + '</span></div>' +
         '<div class="success-meta-row"><span>Submitted</span><span>' + new Date(submission.dateSubmitted).toLocaleString() + '</span></div>' +
         '<div class="success-meta-row"><span>Yes Answers</span><span style="color:var(--green);font-weight:700;">' + yesCount + '</span></div>' +
@@ -528,6 +531,11 @@
         cloudWarning;
 
       document.getElementById('successOverlay').classList.add('show');
+
+      // Auto-redirect to dashboard after 2.5 s
+      setTimeout(function () {
+        window.location.href = 'dashboard.html';
+      }, 2500);
     });
 
     // ---- New walkthrough ----
