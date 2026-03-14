@@ -224,7 +224,7 @@
     document.getElementById('welcomeText').textContent   = 'Welcome, ' + (session.displayName || session.username) + '!';
     document.getElementById('mobileWelcome').textContent = 'History';
     const badge = document.getElementById('roleBadge');
-    badge.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
+    badge.textContent = session.role === 'mastermind' ? 'The Mastermind' : session.role === 'admin' ? 'Admin' : 'Supervisor';
     badge.className   = 'role-badge ' + session.role;
 
     // ---- Type badge config ----
@@ -248,7 +248,7 @@
     var _filtered = [];
 
     async function loadAll() {
-      const username = session.role === 'admin' ? null : session.username;
+      const username = session.role === 'mastermind' ? null : session.username;
       _all      = await getSubmissionsFromCloud(username);
       _filtered = _all.slice();
       renderTable(_filtered);

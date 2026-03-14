@@ -33,7 +33,7 @@ const JMC_USERS = [
   {
     username: 'Sqasim',
     password: 'JMC2026!',
-    role: 'admin',
+    role: 'mastermind',
     displayName: 'Sacha Qasim'
   }
 ];

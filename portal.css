@@ -549,6 +549,7 @@ body {
 }
 
 .role-badge.admin { background: #fff3ee; color: var(--orange); border-color: rgba(232,87,42,0.2); }
+.role-badge.mastermind { background: #1a0533; color: #d4a8ff; border-color: rgba(180,80,255,0.35); letter-spacing: 0.08em; }
 
 .btn-logout {
   background: transparent;

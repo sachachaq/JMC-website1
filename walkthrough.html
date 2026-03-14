@@ -127,7 +127,7 @@
 
     document.getElementById('welcomeText').textContent = 'Welcome, ' + session.username;
     const badge = document.getElementById('roleBadge');
-    badge.textContent = session.role === 'admin' ? 'Admin' : 'Supervisor';
+    badge.textContent = session.role === 'mastermind' ? 'The Mastermind' : session.role === 'admin' ? 'Admin' : 'Supervisor';
     badge.className = 'role-badge ' + session.role;
 
     // ---- Alias engine state (same objects by reference — no copies) ----

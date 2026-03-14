@@ -386,7 +386,7 @@
     document.getElementById('welcomeText').textContent    = 'Welcome, ' + displayName + '!';
     document.getElementById('mobileWelcome').textContent  = 'Welcome, ' + displayName.split(' ')[0];
     const badge = document.getElementById('roleBadge');
-    badge.textContent  = session.role === 'admin' ? 'Admin' : 'Supervisor';
+    badge.textContent  = session.role === 'mastermind' ? 'The Mastermind' : session.role === 'admin' ? 'Admin' : 'Supervisor';
     badge.className    = 'role-badge ' + session.role;
     document.getElementById('accountRole').textContent = badge.textContent;
 
@@ -538,7 +538,7 @@
 
     // ---- Load functions ----
     async function loadRecent() {
-      const username = session.role === 'admin' ? null : session.username;
+      const username = session.role === 'mastermind' ? null : session.username;
       const all = await getSubmissionsFromCloud(username);
       _recentCache = all;
       renderCards(all.slice(0, 5));
@@ -653,7 +653,7 @@
     document.getElementById('exportBtn').addEventListener('click', async function () {
       const btn = this;
       btn.disabled = true; btn.textContent = 'Loading\u2026';
-      const username = session.role === 'admin' ? null : session.username;
+      const username = session.role === 'mastermind' ? null : session.username;
       const submissions = await getSubmissionsFromCloud(username);
       btn.disabled = false; btn.textContent = '\u21D3 Export CSV';
 
