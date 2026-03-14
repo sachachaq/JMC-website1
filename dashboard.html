@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="portal.css?v=8">
+  <link rel="stylesheet" href="portal.css?v=9">
   <script src="portal-theme.js"></script>
   <style>
     /* ---- Submission card list ---- */
@@ -55,6 +55,11 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
+    /* Right content column (score + menu) */
+    .sub-card-right {
+      display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0;
+    }
+
     /* Score column */
     .sub-card-score {
       display: flex; flex-direction: column;
@@ -73,6 +78,63 @@
     .score-mid   { color: #d97706; }
     .score-fail  { color: #dc2626; }
     .score-none  { color: var(--text-light, #9ca3af); }
+
+    /* Draft progress bar */
+    .draft-progress-wrap {
+      display: flex; align-items: center; gap: 0.5rem; margin-top: 0.32rem;
+    }
+    .draft-progress-track {
+      flex: 1; height: 4px; background: var(--border, #e5e7eb);
+      border-radius: 99px; overflow: hidden; max-width: 80px;
+    }
+    .draft-progress-fill {
+      height: 100%; border-radius: 99px; background: #0078AC;
+      transition: width .3s;
+    }
+    .draft-progress-label {
+      font-size: 0.72rem; color: var(--text-light, #6b7280);
+      white-space: nowrap; font-variant-numeric: tabular-nums;
+    }
+
+    /* Resume button */
+    .btn-resume {
+      font-size: 0.75rem; font-weight: 700;
+      color: #0078AC; background: #eff8ff;
+      border: 1.5px solid #bfdbfe; border-radius: 7px;
+      padding: 0.28rem 0.7rem; text-decoration: none;
+      white-space: nowrap; transition: background .12s, border-color .12s;
+      flex-shrink: 0;
+    }
+    .btn-resume:hover { background: #dbeafe; border-color: #93c5fd; text-decoration: none; }
+
+    /* Three-dot card menu */
+    .card-menu-wrap { position: relative; }
+    .card-menu-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 1.15rem; color: var(--text-light, #9ca3af);
+      padding: 0.2rem 0.35rem; border-radius: 6px; line-height: 1;
+      transition: background .12s, color .12s;
+    }
+    .card-menu-btn:hover {
+      background: rgba(0,0,0,.06); color: var(--text, #0f172a);
+    }
+    .card-menu-drop {
+      display: none; position: absolute; right: 0; top: calc(100% + 4px);
+      background: var(--card-bg, #fff); border: 1px solid var(--border, #e5e7eb);
+      border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12), 0 2px 6px rgba(0,0,0,.06);
+      min-width: 140px; z-index: 200; overflow: hidden;
+    }
+    .card-menu-drop.open { display: block; }
+    .card-menu-item {
+      display: block; width: 100%; padding: 0.6rem 0.9rem;
+      font-size: 0.84rem; font-weight: 500; text-align: left;
+      background: none; border: none; cursor: pointer;
+      font-family: var(--font); color: var(--text-mid, #374151);
+      text-decoration: none; transition: background .1s;
+    }
+    .card-menu-item:hover { background: rgba(0,0,0,.04); }
+    .card-menu-delete { color: #dc2626; }
+    .card-menu-delete:hover { background: #fff1f2; }
 
     /* Section header row */
     .sub-list-header {
@@ -106,6 +168,41 @@
       cursor: pointer; transition: color .12s, border-color .12s;
     }
     .btn-export-inline:hover { color: var(--text, #111); border-color: #aaa; }
+
+    /* Delete confirmation modal */
+    .del-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 1000;
+      align-items: center; justify-content: center;
+      padding: 1rem; box-sizing: border-box;
+    }
+    .del-overlay.open { display: flex; }
+    .del-modal {
+      background: var(--card-bg, #fff); border-radius: 14px;
+      padding: 1.75rem; max-width: 360px; width: 100%;
+      box-shadow: 0 12px 40px rgba(0,0,0,.22);
+    }
+    .del-modal h3 { margin: 0 0 0.5rem; font-size: 1.05rem; font-weight: 700; }
+    .del-modal-desc {
+      font-size: 0.875rem; color: var(--text-light, #6b7280);
+      margin: 0 0 1.25rem; line-height: 1.55;
+    }
+    .del-modal-actions { display: flex; gap: 0.625rem; justify-content: flex-end; }
+    .btn-del-cancel {
+      background: none; border: 1.5px solid var(--border, #e5e7eb);
+      border-radius: 8px; padding: 0.5rem 1rem;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      color: var(--text-mid, #374151); font-family: var(--font);
+      transition: background .12s;
+    }
+    .btn-del-cancel:hover { background: rgba(0,0,0,.04); }
+    .btn-del-confirm {
+      background: #dc2626; border: none; border-radius: 8px;
+      padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; color: #fff; font-family: var(--font);
+      transition: background .12s;
+    }
+    .btn-del-confirm:hover { background: #b91c1c; }
 
     /* ---- Report modal ---- */
     .sub-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:900;padding:1rem;box-sizing:border-box;align-items:center;justify-content:center}
@@ -216,6 +313,14 @@
       <a href="operations-assessment.html" class="btn-start">&#9654; Start Assessment</a>
     </div>
 
+    <!-- IN PROGRESS INSPECTIONS (hidden when no drafts) -->
+    <div class="portal-card" id="inProgressCard" style="padding:1.25rem 0 0; display:none;">
+      <div class="sub-list-header">
+        <span class="sub-list-title">In Progress</span>
+      </div>
+      <div class="sub-list" id="draftList"></div>
+    </div>
+
     <!-- MY RECENT SUBMISSIONS -->
     <div class="portal-card" style="padding:1.25rem 0 0;">
       <div class="sub-list-header">
@@ -253,6 +358,18 @@
     </div>
   </div>
 
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div class="del-overlay" id="delOverlay" role="dialog" aria-modal="true" aria-labelledby="delModalTitle">
+    <div class="del-modal">
+      <h3 id="delModalTitle">Delete inspection?</h3>
+      <p class="del-modal-desc" id="delModalDesc"></p>
+      <div class="del-modal-actions">
+        <button class="btn-del-cancel" onclick="cancelDelete()">Cancel</button>
+        <button class="btn-del-confirm" onclick="confirmDeleteFinal()">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="supabase-client.js"></script>
@@ -282,11 +399,23 @@
     };
 
     function typeMeta(s) {
-      const t = inspectionType(s);
+      const t = (s.inspectionType) || 'Walkthrough';
       return TYPE_META[t] || { abbr: t.slice(0, 2).toUpperCase(), bg: '#374151' };
     }
 
-    // ---- Render submission cards ----
+    // ---- Resume URL builder ----
+    const TEMPLATE_PAGES = {
+      'Walkthrough':           'walkthrough.html',
+      'Operations Assessment': 'operations-assessment.html',
+      'FSE':                   'fse.html',
+      'Evaluation':            'evaluation.html'
+    };
+    function draftResumeUrl(d) {
+      const page = TEMPLATE_PAGES[d.inspectionType] || 'walkthrough.html';
+      return page + '?draft=' + encodeURIComponent(d.id);
+    }
+
+    // ---- Render submitted cards ----
     var _recentCache = [];
 
     function renderCards(submissions) {
@@ -300,20 +429,22 @@
         const sc   = calcScore(s);
         const tm   = typeMeta(s);
         const type = inspectionType(s);
+        const menuId = 'menu-s-' + s.id;
 
         const pctHtml = sc.pct !== null
           ? '<span class="sub-score-num ' + (sc.pct >= 80 ? 'score-pass' : sc.pct >= 60 ? 'score-mid' : 'score-fail') + '">' + sc.pct + '%</span>' +
             '<span class="sub-score-tag ' + (sc.pct >= 80 ? 'score-pass' : sc.pct >= 60 ? 'score-mid' : 'score-fail') + '">' + (sc.pct >= 80 ? 'Passing' : sc.pct >= 60 ? 'Needs Work' : 'At Risk') + '</span>'
           : '<span class="sub-score-num score-none">\u2014</span>';
 
-        // Format conducted-on date nicely
         let condDate = '\u2014';
         if (s.conductedOn) {
           const d = new Date(s.conductedOn);
           condDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
-        const pillBg = tm.bg + '1a';  // hex + 10% alpha
+        const pillBg = tm.bg + '1a';
+        const descAttr = (type + ' \u2014 Store ' + (s.storeNumber || 'unknown')).replace(/"/g, '&quot;');
+
         return '<div class="sub-card" data-id="' + s.id + '" role="button" tabindex="0">' +
           '<div class="sub-card-left">' +
             '<div class="sub-card-headline">' +
@@ -322,8 +453,18 @@
             '</div>' +
             '<div class="sub-card-meta">Prepared by ' + (s.preparedBy || s.username || '\u2014') + ' \u00b7 ' + condDate + '</div>' +
           '</div>' +
-          '<div class="sub-card-score">' + pctHtml + '</div>' +
-          '</div>';
+          '<div class="sub-card-right">' +
+            '<div class="sub-card-score">' + pctHtml + '</div>' +
+            '<div class="card-menu-wrap">' +
+              '<button class="card-menu-btn" data-menu-id="' + menuId + '" aria-label="More options" aria-haspopup="true">\u22ee</button>' +
+              '<div class="card-menu-drop" id="' + menuId + '" role="menu">' +
+                '<button class="card-menu-item card-menu-delete" role="menuitem"' +
+                  ' data-delete-type="submitted" data-delete-id="' + s.id + '"' +
+                  ' data-delete-desc="' + descAttr + '">Delete</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
       }).join('');
 
       // Keyboard nav: Enter on card opens modal
@@ -334,7 +475,63 @@
       });
     }
 
-    // ---- Load recent submissions ----
+    // ---- Render draft cards ----
+    var _draftsCache = [];
+
+    function renderDraftCards(drafts) {
+      const list = document.getElementById('draftList');
+      if (!drafts.length) {
+        list.innerHTML = '<div class="sub-list-empty">No drafts in progress.</div>';
+        return;
+      }
+
+      list.innerHTML = drafts.map(function (d) {
+        const tm      = typeMeta(d);
+        const type    = d.inspectionType || 'Walkthrough';
+        const resumeUrl = draftResumeUrl(d);
+        const menuId  = 'menu-d-' + d.id;
+
+        const answered = Object.keys(d.answers || {}).filter(function (k) { return !!d.answers[k]; }).length;
+        const total    = (type === 'Walkthrough') ? ALL_QUESTION_IDS.length : 35;
+        const pct      = total > 0 ? Math.round(answered / total * 100) : 0;
+
+        let dateStr = '\u2014';
+        if (d.lastModified) {
+          const dt = new Date(d.lastModified);
+          dateStr = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        const pillBg   = tm.bg + '1a';
+        const descAttr = (type + ' \u2014 Store ' + (d.storeNumber || 'unknown')).replace(/"/g, '&quot;');
+
+        return '<div class="sub-card draft-card" data-draft-id="' + d.id + '" data-resume-url="' + resumeUrl + '" role="button" tabindex="0">' +
+          '<div class="sub-card-left">' +
+            '<div class="sub-card-headline">' +
+              '<span class="sub-type-pill" style="background:' + pillBg + ';color:' + tm.bg + '">' + type + '</span>' +
+              '<span class="sub-card-store">\u2022 Store ' + (d.storeNumber || '\u2014') + '</span>' +
+            '</div>' +
+            '<div class="sub-card-meta">Last edited ' + dateStr + '</div>' +
+            '<div class="draft-progress-wrap">' +
+              '<div class="draft-progress-track"><div class="draft-progress-fill" style="width:' + pct + '%"></div></div>' +
+              '<span class="draft-progress-label">' + answered + ' / ' + total + ' answered</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="sub-card-right">' +
+            '<a class="btn-resume" href="' + resumeUrl + '">Resume \u2192</a>' +
+            '<div class="card-menu-wrap">' +
+              '<button class="card-menu-btn" data-menu-id="' + menuId + '" aria-label="More options" aria-haspopup="true">\u22ee</button>' +
+              '<div class="card-menu-drop" id="' + menuId + '" role="menu">' +
+                '<button class="card-menu-item card-menu-delete" role="menuitem"' +
+                  ' data-delete-type="draft" data-delete-id="' + d.id + '"' +
+                  ' data-delete-desc="' + descAttr + '">Delete draft</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    // ---- Load functions ----
     async function loadRecent() {
       const username = session.role === 'admin' ? null : session.username;
       const all = await getSubmissionsFromCloud(username);
@@ -342,13 +539,99 @@
       renderCards(all.slice(0, 5));
     }
 
+    async function loadDrafts() {
+      const drafts = await getDraftsFromCloud(session.username);
+      _draftsCache = drafts;
+      const card = document.getElementById('inProgressCard');
+      if (drafts.length) {
+        card.style.display = '';
+        renderDraftCards(drafts);
+      } else {
+        card.style.display = 'none';
+      }
+    }
+
     // ---- Card click delegation ----
+
+    // Submitted card → open report (ignore menu clicks)
     document.getElementById('subList').addEventListener('click', function (e) {
+      if (e.target.closest('.card-menu-wrap')) return;
       const card = e.target.closest('.sub-card[data-id]');
-      if (card) openReportModal(_recentCache.find(s => s.id === card.dataset.id));
+      if (card) openReportModal(_recentCache.find(function (s) { return s.id === card.dataset.id; }));
     });
 
-    // ---- CSV Export (fetches all for current user/admin) ----
+    // Draft card → resume (ignore menu and resume-link clicks)
+    document.getElementById('draftList').addEventListener('click', function (e) {
+      if (e.target.closest('.card-menu-wrap')) return;
+      if (e.target.closest('.btn-resume')) return;
+      const card = e.target.closest('.draft-card[data-draft-id]');
+      if (card) window.location.href = card.dataset.resumeUrl;
+    });
+
+    // ---- Three-dot menu + delete delegation (document-level) ----
+    document.addEventListener('click', function (e) {
+      // Toggle card menu
+      const menuBtn = e.target.closest('.card-menu-btn');
+      if (menuBtn) {
+        e.stopPropagation();
+        const targetId = menuBtn.dataset.menuId;
+        document.querySelectorAll('.card-menu-drop.open').forEach(function (drop) {
+          if (drop.id !== targetId) drop.classList.remove('open');
+        });
+        document.getElementById(targetId).classList.toggle('open');
+        return;
+      }
+
+      // Delete action
+      const delBtn = e.target.closest('.card-menu-delete');
+      if (delBtn) {
+        e.stopPropagation();
+        document.querySelectorAll('.card-menu-drop.open').forEach(function (d) { d.classList.remove('open'); });
+        _openDeleteModal(delBtn.dataset.deleteType, delBtn.dataset.deleteId, delBtn.dataset.deleteDesc);
+        return;
+      }
+
+      // Close all menus on outside click
+      document.querySelectorAll('.card-menu-drop.open').forEach(function (d) { d.classList.remove('open'); });
+    });
+
+    // ---- Delete modal ----
+    var _pendingDelete = null;
+
+    function _openDeleteModal(type, id, desc) {
+      _pendingDelete = { type: type, id: id };
+      document.getElementById('delModalDesc').textContent =
+        'This will permanently delete: ' + desc + '. This cannot be undone.';
+      document.getElementById('delOverlay').classList.add('open');
+    }
+
+    function cancelDelete() {
+      _pendingDelete = null;
+      document.getElementById('delOverlay').classList.remove('open');
+    }
+
+    async function confirmDeleteFinal() {
+      if (!_pendingDelete) return;
+      const type = _pendingDelete.type;
+      const id   = _pendingDelete.id;
+      _pendingDelete = null;
+      document.getElementById('delOverlay').classList.remove('open');
+
+      if (type === 'draft') {
+        await deleteDraft(id);
+        loadDrafts();
+      } else {
+        await deleteSubmission(id);
+        loadRecent();
+      }
+    }
+
+    // Close delete modal when clicking the overlay backdrop
+    document.getElementById('delOverlay').addEventListener('click', function (e) {
+      if (e.target === this) cancelDelete();
+    });
+
+    // ---- CSV Export ----
     function escapeCSV(val) {
       if (val === null || val === undefined) return '""';
       const s = String(val);
@@ -362,19 +645,19 @@
       btn.disabled = true; btn.textContent = 'Loading\u2026';
       const username = session.role === 'admin' ? null : session.username;
       const submissions = await getSubmissionsFromCloud(username);
-      btn.disabled = false; btn.textContent = '\u2659 Export CSV';
+      btn.disabled = false; btn.textContent = '\u21D3 Export CSV';
 
       if (!submissions.length) { alert('No submissions to export yet.'); return; }
 
       const fixedHeaders = ['Submission ID', 'Submitted By', 'Date Submitted',
         'Store Number', 'Store Name', 'Conducted On', 'Prepared By', 'Notes'];
-      const qHeaders = ALL_QUESTION_IDS.map(id => QUESTION_TEXT_MAP[id] || id);
+      const qHeaders = ALL_QUESTION_IDS.map(function (id) { return QUESTION_TEXT_MAP[id] || id; });
       const rows = [fixedHeaders.concat(qHeaders).map(escapeCSV).join(',')];
 
       submissions.forEach(function (s) {
         const fixed = [s.id, s.username, s.dateSubmitted, s.storeNumber,
           s.storeName, s.conductedOn, s.preparedBy, s.notes || ''];
-        const answers = ALL_QUESTION_IDS.map(id => s.answers ? (s.answers[id] || '') : '');
+        const answers = ALL_QUESTION_IDS.map(function (id) { return s.answers ? (s.answers[id] || '') : ''; });
         rows.push(fixed.concat(answers).map(escapeCSV).join(','));
       });
 
@@ -382,7 +665,7 @@
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
-      a.href = url; a.download = 'JMC_Walkthroughs_' + new Date().toISOString().slice(0, 10) + '.csv';
+      a.href = url; a.download = 'JMC_Inspections_' + new Date().toISOString().slice(0, 10) + '.csv';
       document.body.appendChild(a); a.click();
       document.body.removeChild(a); URL.revokeObjectURL(url);
     });
@@ -394,15 +677,15 @@
       if (!trigger || !menu) return;
       function open()  { menu.style.top = (trigger.getBoundingClientRect().bottom + 6) + 'px'; menu.classList.add('open'); trigger.setAttribute('aria-expanded', 'true'); }
       function close() { menu.classList.remove('open'); trigger.setAttribute('aria-expanded', 'false'); }
-      trigger.addEventListener('click', e => { e.stopPropagation(); menu.classList.contains('open') ? close() : open(); });
-      menu.querySelectorAll('.account-menu-item').forEach(i => i.addEventListener('click', close));
-      menu.addEventListener('click', e => e.stopPropagation());
-      document.addEventListener('click', close);
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') { close(); trigger.focus(); } });
+      trigger.addEventListener('click', function (e) { e.stopPropagation(); menu.classList.contains('open') ? close() : open(); });
+      menu.querySelectorAll('.account-menu-item').forEach(function (i) { i.addEventListener('click', close); });
+      menu.addEventListener('click', function (e) { e.stopPropagation(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close(); trigger.focus(); } });
     })();
 
     // ---- Init ----
     loadRecent();
+    loadDrafts();
   </script>
 </body>
 </html>

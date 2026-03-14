@@ -2,6 +2,7 @@
 
 const SESSION_KEY    = 'jmc_session';
 const SUBMISSIONS_KEY = 'jmc_submissions';
+const DRAFT_PREFIX   = 'jmc_draft_';
 
 // ---- Session ----
 
@@ -61,9 +62,8 @@ function _dataUrlToBlob(dataUrl) {
 }
 
 // Upload every image in ImageStore format to the private Storage bucket.
-// Path structure: {submissionId}/{qid}/{imageId}.jpg
+// Path structure: {shortId}/{qid}_{imageId}.jpg
 // Returns a path-only map: { qid: [{ id, name, path }] }
-// No URLs are stored — the bucket is private; signed URLs are generated on read.
 async function uploadImagesToStorage(submissionId, username, imagesStore) {
   if (typeof supabaseClient === 'undefined' || !imagesStore) return {};
   const pathMap = {};
@@ -80,7 +80,6 @@ async function uploadImagesToStorage(submissionId, username, imagesStore) {
           .from(STORAGE_BUCKET)
           .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
         if (error) { console.warn('[Storage] Upload failed:', path, error.message); continue; }
-        // Store path only — URL generated on demand via signed URL
         pathMap[qid].push({ id: img.id, name: img.name, path });
         console.log('[Storage] Uploaded:', path);
       } catch (e) {
@@ -93,13 +92,9 @@ async function uploadImagesToStorage(submissionId, username, imagesStore) {
 }
 
 // Generate signed URLs for every image path across a set of submissions.
-// Makes a single batched createSignedUrls call per bucket — one API round-trip
-// regardless of how many images exist.
-// Returns the same submissions array with img.url populated on each image.
 async function _enrichWithSignedUrls(submissions) {
   if (typeof supabaseClient === 'undefined') return submissions;
 
-  // 1. Collect every unique path from every submission.
   const allPaths = [];
   submissions.forEach(s => {
     if (!s.images) return;
@@ -114,10 +109,8 @@ async function _enrichWithSignedUrls(submissions) {
   const urlMap = {};
 
   try {
-    // Batch call — one round-trip for all paths.
     const { data: signed, error } = await supabaseClient.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrls(allPaths, 3600);
+      .from(STORAGE_BUCKET).createSignedUrls(allPaths, 3600);
     if (error) throw new Error(error.message);
     if (!signed?.length) throw new Error('Empty response');
     signed.forEach(item => { if (item.signedUrl) urlMap[item.path] = item.signedUrl; });
@@ -130,12 +123,10 @@ async function _enrichWithSignedUrls(submissions) {
           .from(STORAGE_BUCKET).createSignedUrl(path, 3600);
         if (!error && data?.signedUrl) urlMap[path] = data.signedUrl;
         else if (error) console.warn('[Storage] createSignedUrl failed:', path, error.message);
-      } catch (e) { console.warn('[Storage] createSignedUrl exception:', path, e.message); }
+      } catch (e) { console.warn('[Storage] exception:', path, e.message); }
     }
-    console.log('[Storage] Individual signed URLs resolved:', Object.keys(urlMap).length);
   }
 
-  // Stamp each image with its signed URL.
   return submissions.map(s => {
     if (!s.images) return s;
     const enriched = {};
@@ -149,13 +140,9 @@ async function _enrichWithSignedUrls(submissions) {
   });
 }
 
-// ---- Primary save ----
+// ---- Primary save (submitted inspections) ----
 // Returns { localOk, cloudOk, error }.
-// localOk is always true — _cacheSubmission is synchronous and never throws.
-// cloudOk reflects whether Supabase accepted the row.
-// onProgress(statusString) is called to update UI during long operations.
 async function saveSubmission(submission, onProgress) {
-  // 1. Cache locally first — preserves base64 images for offline display.
   _cacheSubmission(submission);
 
   if (typeof supabaseClient === 'undefined') {
@@ -164,27 +151,28 @@ async function saveSubmission(submission, onProgress) {
   }
 
   try {
-    // 2. Upload images to Supabase Storage. Get back URL map.
     const hasImages = submission.images && Object.keys(submission.images).length > 0;
     if (hasImages && onProgress) onProgress('Uploading photos\u2026');
     const cloudImages = hasImages
       ? await uploadImagesToStorage(submission.id, submission.username, submission.images)
       : {};
 
-    // 3. Insert row to DB. Images field stores URLs, never base64.
     if (onProgress) onProgress('Saving\u2026');
     const row = {
-      id:             submission.id,
-      username:       submission.username,
-      date_submitted: submission.dateSubmitted,
-      store_number:   submission.storeNumber,
-      store_name:     submission.storeName,
-      conducted_on:   submission.conductedOn,
-      prepared_by:    submission.preparedBy,
-      notes:          submission.notes,
-      answers:        submission.answers,
-      question_notes: submission.questionNotes,
-      images:         cloudImages
+      id:              submission.id,
+      username:        submission.username,
+      status:          'submitted',
+      inspection_type: submission.inspectionType || null,
+      date_submitted:  submission.dateSubmitted,
+      last_modified:   submission.dateSubmitted,
+      store_number:    submission.storeNumber,
+      store_name:      submission.storeName,
+      conducted_on:    submission.conductedOn,
+      prepared_by:     submission.preparedBy,
+      notes:           submission.notes,
+      answers:         submission.answers,
+      question_notes:  submission.questionNotes,
+      images:          cloudImages
     };
 
     const timeoutPromise = new Promise(resolve =>
@@ -195,16 +183,19 @@ async function saveSubmission(submission, onProgress) {
     );
 
     const { data, error } = await Promise.race([
-      supabaseClient.from('inspections').insert([row]),
+      supabaseClient.from('inspections').upsert([row], { onConflict: 'id' }),
       timeoutPromise
     ]);
 
     if (error) {
-      console.error('[Supabase] Insert FAILED — code:', error.code, '| msg:', error.message, '| hint:', error.hint);
+      console.error('[Supabase] Upsert FAILED — code:', error.code, '| msg:', error.message);
       return { localOk: true, cloudOk: false, error: error.message };
     }
 
-    console.log('[Supabase] Insert SUCCESS:', data);
+    // Clean up localStorage draft on successful cloud submit
+    try { localStorage.removeItem(DRAFT_PREFIX + submission.id); } catch (e) {}
+
+    console.log('[Supabase] Upsert SUCCESS:', data);
     return { localOk: true, cloudOk: true, error: null };
 
   } catch (e) {
@@ -213,15 +204,15 @@ async function saveSubmission(submission, onProgress) {
   }
 }
 
-// ---- Primary read ----
+// ---- Primary read (submitted only) ----
 // username = null → fetch all (admin only).
-// Falls back to localStorage if Supabase is unavailable.
 async function getSubmissionsFromCloud(username) {
   if (typeof supabaseClient === 'undefined') return getSubmissions();
 
   let query = supabaseClient
     .from('inspections')
     .select('*')
+    .or('status.eq.submitted,status.is.null')
     .order('date_submitted', { ascending: false });
 
   if (username) query = query.eq('username', username);
@@ -233,25 +224,130 @@ async function getSubmissionsFromCloud(username) {
   }
 
   const submissions = (data || []).map(r => ({
-    id:            r.id,
-    username:      r.username,
-    dateSubmitted: r.date_submitted,
-    storeNumber:   r.store_number,
-    storeName:     r.store_name,
-    conductedOn:   r.conducted_on,
-    preparedBy:    r.prepared_by,
-    notes:         r.notes,
-    answers:       r.answers,
-    questionNotes: r.question_notes,
-    images:        r.images   // path-based from DB; signed URLs added below
+    id:             r.id,
+    username:       r.username,
+    inspectionType: r.inspection_type || null,
+    dateSubmitted:  r.date_submitted,
+    storeNumber:    r.store_number,
+    storeName:      r.store_name,
+    conductedOn:    r.conducted_on,
+    preparedBy:     r.prepared_by,
+    notes:          r.notes,
+    answers:        r.answers,
+    questionNotes:  r.question_notes,
+    images:         r.images
   }));
   return _enrichWithSignedUrls(submissions);
 }
 
+// ---- Draft CRUD ----
+
+// Save draft to localStorage (always) and Supabase (async, best-effort).
+// Images stay in localStorage only — they are uploaded on final submit.
+async function saveDraft(draft) {
+  try {
+    localStorage.setItem(DRAFT_PREFIX + draft.id, JSON.stringify(draft));
+  } catch (e) { console.warn('[Draft] localStorage write failed:', e.message); }
+
+  if (typeof supabaseClient === 'undefined') return { localOk: true, cloudOk: false };
+
+  try {
+    const row = {
+      id:              draft.id,
+      username:        draft.username,
+      status:          'draft',
+      inspection_type: draft.inspectionType || null,
+      date_submitted:  null,
+      last_modified:   draft.lastModified || new Date().toISOString(),
+      store_number:    draft.storeNumber  || null,
+      store_name:      draft.storeName    || null,
+      conducted_on:    draft.conductedOn  || null,
+      prepared_by:     draft.preparedBy   || null,
+      notes:           draft.notes        || null,
+      answers:         draft.answers      || {},
+      question_notes:  draft.questionNotes || {},
+      images:          {}   // images kept in localStorage only during draft
+    };
+    const { error } = await supabaseClient
+      .from('inspections').upsert([row], { onConflict: 'id' });
+    if (error) { console.warn('[Draft] Cloud save failed:', error.message); return { localOk: true, cloudOk: false }; }
+    return { localOk: true, cloudOk: true };
+  } catch (e) {
+    console.warn('[Draft] Exception:', e.message);
+    return { localOk: true, cloudOk: false };
+  }
+}
+
+// Fetch drafts for a user. Falls back to scanning localStorage.
+async function getDraftsFromCloud(username) {
+  // Scan localStorage as fast offline fallback
+  const localDrafts = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!key || !key.startsWith(DRAFT_PREFIX)) continue;
+    try {
+      const d = JSON.parse(localStorage.getItem(key));
+      if (d && d.username === username) localDrafts.push(d);
+    } catch (e) { /* skip corrupt */ }
+  }
+
+  if (typeof supabaseClient === 'undefined') return localDrafts;
+
+  const { data, error } = await supabaseClient
+    .from('inspections')
+    .select('id, username, inspection_type, store_number, store_name, conducted_on, prepared_by, answers, last_modified, status')
+    .eq('username', username)
+    .eq('status', 'draft')
+    .order('last_modified', { ascending: false });
+
+  if (error) {
+    console.error('[Draft] Fetch error:', error.message);
+    return localDrafts;
+  }
+
+  return (data || []).map(r => ({
+    id:             r.id,
+    username:       r.username,
+    inspectionType: r.inspection_type || 'Walkthrough',
+    storeNumber:    r.store_number,
+    storeName:      r.store_name,
+    conductedOn:    r.conducted_on,
+    preparedBy:     r.prepared_by,
+    answers:        r.answers || {},
+    lastModified:   r.last_modified
+  }));
+}
+
+// Delete a draft. Safety guard: never deletes submitted rows.
+async function deleteDraft(id) {
+  try { localStorage.removeItem(DRAFT_PREFIX + id); } catch (e) {}
+  if (typeof supabaseClient === 'undefined') return { ok: true };
+  try {
+    const { error } = await supabaseClient
+      .from('inspections').delete().eq('id', id).eq('status', 'draft');
+    if (error) console.warn('[Draft] Delete error:', error.message);
+    return { ok: !error };
+  } catch (e) { return { ok: false }; }
+}
+
+// Delete a submitted inspection. Safety guard: never deletes drafts.
+async function deleteSubmission(id) {
+  const list = getSubmissions().filter(s => s.id !== id);
+  try { localStorage.setItem(SUBMISSIONS_KEY, JSON.stringify(list)); } catch (e) {}
+  if (typeof supabaseClient === 'undefined') return { ok: true };
+  try {
+    const { error } = await supabaseClient
+      .from('inspections').delete().eq('id', id).eq('status', 'submitted');
+    if (error) console.warn('[Delete] Error:', error.message);
+    return { ok: !error };
+  } catch (e) { return { ok: false }; }
+}
+
 // ---- Utilities ----
 
-function generateId() {
+// prefix: 'WT' (Walkthrough), 'OA' (Operations Assessment), 'FSE', 'EV' (Evaluation), etc.
+function generateId(prefix) {
   const ts   = Date.now();
   const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `WT-${ts}-${rand}`;
+  return (prefix || 'WT') + '-' + ts + '-' + rand;
 }

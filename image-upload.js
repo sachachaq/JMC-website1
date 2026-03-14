@@ -206,3 +206,14 @@ function clearUploadZone(qid) {
   if (thumbs) thumbs.innerHTML = '';
   setUploadZoneState(qid, 'default');
 }
+
+// Restore a saved image entry into its upload zone (used when resuming a draft).
+// entry: { id, name, dataUrl }
+function restoreImageToZone(qid, entry) {
+  if (!entry || !entry.dataUrl) return;
+  var thumbsEl = document.getElementById('imu-thumbs-' + qid);
+  if (!thumbsEl) return;
+  ImageStore.add(qid, entry);
+  _renderThumb(qid, entry, thumbsEl);
+  _syncBtnLabel(qid);
+}

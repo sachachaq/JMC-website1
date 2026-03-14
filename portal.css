@@ -1828,6 +1828,20 @@ body {
   .imu-zone { padding-left: 16px; padding-right: 16px; }
 }
 
+/* ===== DRAFT SAVE INDICATOR (walkthrough.html) ===== */
+.draft-indicator {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: transparent;
+  min-width: 80px;
+  text-align: center;
+  transition: color 0.2s;
+}
+.draft-indicator[data-state="saving"] { color: var(--text-light); }
+.draft-indicator[data-state="saved"]  { color: var(--green); }
+.draft-indicator[data-state="error"]  { color: var(--red); }
+
 /* ===== QUESTION NOTE ZONES ===== */
 .note-zone {
   padding: 5px 20px 7px;

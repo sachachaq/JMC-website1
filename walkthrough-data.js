@@ -126,3 +126,23 @@ FORM_SECTIONS.forEach(section => {
   });
 });
 QUESTION_TEXT_MAP['noteworthy'] = '[Noteworthy] Does this store have something noteworthy to share?';
+
+
+// ---- Template config (used by InspectionEngine) ----
+// Other templates (OA, FSE, Evaluation) follow the same shape in their own data files.
+const WALKTHROUGH_CONFIG = {
+  templateId:      'walkthrough',
+  templateName:    'Walkthrough',
+  idPrefix:        'WT',
+  sections:        FORM_SECTIONS,
+  allQuestionIds:  ALL_QUESTION_IDS,
+  questionTextMap: QUESTION_TEXT_MAP,
+  storeNumbers:    STORE_NUMBERS,
+  scoring: {
+    passThreshold: 80,
+    warnThreshold: 60,
+    passLabel:     'Passing',
+    warnLabel:     'Needs Work',
+    failLabel:     'At Risk'
+  }
+};
